@@ -1,0 +1,31 @@
+.buscador {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  height: 52px;
+  padding: 0 16px;
+  border: 1px solid var(--line);
+  color: var(--teal-600);
+}
+
+.buscador:focus-within {
+  border-color: var(--teal-600);
+}
+
+.buscador input {
+  flex: 1;
+  min-width: 0;
+  background: none;
+  border: 0;
+  outline: none;
+  font-size: 15px;
+  color: var(--text);
+}
+
+.buscador input::placeholder {
+  color: var(--muted);
+}
+
+.buscador svg:last-child {
+  color: var(--muted);
+}

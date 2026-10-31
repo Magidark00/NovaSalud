@@ -1,0 +1,49 @@
+.stat-card {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  padding: 18px 20px;
+}
+
+.stat-card__icon {
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+}
+
+.stat-card__icon--teal {
+  background: var(--teal-100);
+  color: var(--teal-600);
+}
+
+.stat-card__icon--warning {
+  background: var(--orange-bg);
+  color: #f59e0b;
+}
+
+.stat-card__icon--danger {
+  background: var(--red-bg);
+  color: var(--red);
+}
+
+.stat-card__label {
+  font-size: 14px;
+  color: var(--muted);
+}
+
+.stat-card__value {
+  margin-top: 2px;
+  font-size: 26px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+
+.stat-card__note {
+  margin-top: 2px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--green);
+}

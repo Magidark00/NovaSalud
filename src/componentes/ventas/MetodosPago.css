@@ -1,0 +1,31 @@
+.metodos {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.metodos__btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 10px 4px;
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 500;
+  transition: background 0.15s;
+}
+
+.metodos__btn:hover {
+  background: #faf3ee;
+}
+
+.metodos__btn.is-active {
+  background: var(--teal-100);
+  border-color: var(--teal-600);
+  color: var(--teal-700);
+  font-weight: 600;
+}

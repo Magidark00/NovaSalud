@@ -1,0 +1,126 @@
+.sidebar {
+  position: sticky;
+  top: 0;
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  padding: 24px 20px 20px;
+  background: var(--sidebar);
+  color: #fff;
+}
+
+.sidebar__brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 36px;
+  padding-left: 4px;
+  font-size: 22px;
+  font-weight: 700;
+}
+
+.sidebar__brand svg {
+  flex-shrink: 0;
+  color: var(--mint);
+}
+
+.sidebar__nav {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.sidebar__link {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  height: 48px;
+  padding: 0 16px;
+  border-radius: 12px;
+  color: rgba(255, 255, 255, 0.92);
+  font-size: 15px;
+  font-weight: 500;
+  transition: background 0.15s;
+}
+
+.sidebar__link:hover {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.sidebar__link.is-active {
+  background: rgba(255, 255, 255, 0.16);
+  color: #fff;
+}
+
+.sidebar__link svg {
+  flex-shrink: 0;
+}
+
+.sidebar__dot {
+  display: none;
+  width: 7px;
+  height: 7px;
+  margin-left: auto;
+  border-radius: 50%;
+  background: var(--mint);
+}
+
+.sidebar__link.is-active .sidebar__dot {
+  display: block;
+}
+
+.sidebar__footer {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px 4px 0;
+  border-top: 1px solid rgba(255, 255, 255, 0.2);
+  font-size: 13px;
+}
+
+.sidebar__footer strong {
+  display: block;
+  font-weight: 600;
+}
+
+.sidebar__footer span {
+  font-size: 12px;
+  opacity: 0.8;
+}
+
+.sidebar__status {
+  width: 7px;
+  height: 7px;
+  margin-left: auto;
+  border-radius: 50%;
+  background: var(--mint);
+}
+
+/* Barra lateral compacta en pantallas pequeñas: solo íconos */
+@media (max-width: 900px) {
+  .sidebar {
+    align-items: center;
+    padding: 20px 10px;
+  }
+
+  .sidebar__label,
+  .sidebar__dot,
+  .sidebar__status {
+    display: none !important;
+  }
+
+  .sidebar__brand {
+    padding-left: 0;
+  }
+
+  .sidebar__link {
+    justify-content: center;
+    padding: 0;
+    width: 48px;
+  }
+
+  .sidebar__footer {
+    padding-top: 12px;
+  }
+}
