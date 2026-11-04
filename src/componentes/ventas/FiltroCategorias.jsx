@@ -1,8 +1,9 @@
 import './FiltroCategorias.css'
 
-export default function FiltroCategorias({ categorias, activa, onChange }) {
+// `suave`: variante para usarla dentro de una tarjeta (Inventario y Reposición)
+export default function FiltroCategorias({ categorias, activa, onChange, suave = false }) {
   return (
-    <div className="chips" role="group" aria-label="Categorías">
+    <div className={`chips${suave ? ' chips--suave' : ''}`} role="group" aria-label="Filtros">
       {categorias.map((cat) => (
         <button
           key={cat}

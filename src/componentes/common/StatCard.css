@@ -41,9 +41,31 @@
   letter-spacing: -0.01em;
 }
 
+.stat-card__value--teal {
+  color: var(--teal-600);
+}
+
+.stat-card__value--warning {
+  color: #f59e0b;
+}
+
+.stat-card__value--danger {
+  color: var(--red);
+}
+
+.stat-card__row {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+}
+
 .stat-card__note {
   margin-top: 2px;
   font-size: 12px;
   font-weight: 600;
   color: var(--green);
+}
+
+.stat-card__row .stat-card__note {
+  margin-top: 0;
 }

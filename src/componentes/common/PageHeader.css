@@ -12,6 +12,12 @@
   gap: 12px;
 }
 
+.page-header__actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
 .page-header h1 {
   font-size: 28px;
   font-weight: 700;
@@ -35,4 +41,13 @@
   height: 7px;
   border-radius: 50%;
   background: var(--green);
+}
+
+.status-pill--warning {
+  background: var(--orange-bg);
+  color: var(--orange-text);
+}
+
+.status-pill--warning .status-pill__dot {
+  background: var(--orange-text);
 }

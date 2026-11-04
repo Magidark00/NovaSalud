@@ -6,17 +6,14 @@ import BuscadorProducto from '../componentes/ventas/BuscadorProducto'
 import FiltroCategorias from '../componentes/ventas/FiltroCategorias'
 import ProductCard from '../componentes/ventas/ProductCard'
 import TicketVenta from '../componentes/ventas/TicketVenta'
+import { useInventario } from '../context/InventarioContext'
 import { useVenta } from '../hooks/useVenta'
-import { CATEGORIAS, PRODUCTOS } from '../data/productos'
-import { formatBoleta, formatSoles } from '../utils/formato'
+import { CATEGORIAS } from '../data/productos'
+import { formatBoleta, formatSoles, normalizar } from '../utils/formato'
 import './Ventas.css'
 
-// Quita tildes y pasa a minúsculas para que "analgesicos" encuentre "Analgésicos"
-const normalizar = (texto) =>
-  texto.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase()
-
 export default function Ventas() {
-  const [productos, setProductos] = useState(PRODUCTOS)
+  const { productos, descontarStock } = useInventario()
   const [busqueda, setBusqueda] = useState('')
   const [categoria, setCategoria] = useState('Todos')
   const [numeroBoleta, setNumeroBoleta] = useState(461)
@@ -49,13 +46,7 @@ export default function Ventas() {
 
   function cobrar() {
     const boleta = formatBoleta(numeroBoleta)
-    // Actualiza el stock con lo vendido
-    setProductos((prev) =>
-      prev.map((p) => {
-        const linea = venta.lineas.find((l) => l.id === p.id)
-        return linea ? { ...p, stock: p.stock - linea.cantidad } : p
-      }),
-    )
+    descontarStock(venta.lineas) // baja el stock en todo el sistema
     setAviso(`Boleta ${boleta} emitida por ${formatSoles(venta.totales.total)}`)
     setNumeroBoleta((n) => n + 1)
     venta.reiniciar()

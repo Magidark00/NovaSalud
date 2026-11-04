@@ -1,0 +1,103 @@
+.tabla-card {
+  overflow: hidden;
+}
+
+.tabla-scroll {
+  overflow-x: auto;
+}
+
+.tabla-card .paginacion {
+  padding: 14px 20px;
+}
+
+.data-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.data-table th {
+  padding: 14px 16px;
+  background: #f7ece6;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 500;
+  text-align: left;
+  white-space: nowrap;
+}
+
+.data-table td {
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--line);
+  vertical-align: middle;
+}
+
+.data-table tbody tr:last-child td {
+  border-bottom: 0;
+}
+
+.data-table tbody tr.is-clickable {
+  cursor: pointer;
+}
+
+.data-table tbody tr.is-selected td {
+  background: #e9f6f2;
+}
+
+.data-table__main {
+  display: block;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.data-table__sub {
+  display: block;
+  margin-top: 2px;
+  font-size: 11px;
+  color: var(--muted);
+}
+
+.data-table__num {
+  font-weight: 700;
+}
+
+.data-table__muted {
+  color: var(--muted);
+}
+
+.data-table__vacio {
+  padding: 32px 16px;
+  color: var(--muted);
+  text-align: center;
+}
+
+.data-table__actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.data-table__persona {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.data-table input[type='checkbox'] {
+  width: 16px;
+  height: 16px;
+  accent-color: var(--teal-600);
+}
+
+.stock--normal {
+  color: var(--green);
+}
+
+.stock--bajo,
+.stock--porVencer {
+  color: var(--orange-text);
+}
+
+.stock--agotado {
+  color: var(--red-text);
+}

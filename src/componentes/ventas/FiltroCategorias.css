@@ -25,3 +25,16 @@
   color: #fff;
   font-weight: 600;
 }
+
+/* Variante dentro de tarjetas */
+.chips--suave .chips__chip {
+  background: #fdeee6;
+}
+
+.chips--suave .chips__chip:hover {
+  background: #fbe3d9;
+}
+
+.chips--suave .chips__chip.is-active {
+  background: var(--teal-600);
+}

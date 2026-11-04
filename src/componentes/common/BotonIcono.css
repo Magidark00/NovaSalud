@@ -1,0 +1,26 @@
+.boton-icono {
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  background: none;
+  border: 0;
+  border-radius: 8px;
+  transition: background 0.15s;
+}
+
+.boton-icono--teal {
+  color: var(--teal-600);
+}
+
+.boton-icono--teal:hover {
+  background: var(--teal-100);
+}
+
+.boton-icono--danger {
+  color: var(--red);
+}
+
+.boton-icono--danger:hover {
+  background: var(--red-bg);
+}
