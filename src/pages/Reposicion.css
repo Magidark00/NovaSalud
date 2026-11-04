@@ -1,0 +1,25 @@
+.reposicion {
+  display: grid;
+  grid-template-columns: minmax(0, 1.75fr) minmax(320px, 1fr);
+  gap: 24px;
+  align-items: start;
+}
+
+.reposicion__lateral {
+  display: grid;
+  gap: 24px;
+}
+
+.reposicion__lista {
+  padding-top: 20px;
+}
+
+.reposicion__lista .repo-titulo {
+  padding: 0 20px;
+}
+
+@media (max-width: 1100px) {
+  .reposicion {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

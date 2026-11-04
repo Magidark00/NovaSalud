@@ -6,6 +6,7 @@ import Ventas from './pages/Ventas'
 import Inventario from './pages/Inventario'
 import Clientes from './pages/Clientes'
 import EnConstruccion from './pages/EnConstruccion'
+import Reposicion from './pages/Reposicion'
 
 export default function App() {
   return (
@@ -16,7 +17,7 @@ export default function App() {
           <Route path="ventas" element={<Ventas />} />
           <Route path="inventario" element={<Inventario />} />
           <Route path="clientes" element={<Clientes />} />
-          <Route path="reposicion" element={<EnConstruccion titulo="Reposición" />} />
+          <Route path="reposicion" element={<Reposicion />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Route>
       </Routes>

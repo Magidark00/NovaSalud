@@ -1,0 +1,236 @@
+/* Estilos de la pantalla Reposición.
+   Usa las variables de index.css; los badges de estado vienen de common/Badge. */
+
+.repo-titulo {
+  font-size: 17px;
+  font-weight: 700;
+  margin: 0 0 12px;
+  color: var(--text);
+}
+
+/* Filtros */
+.repo-filtros {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  padding: 0 20px 14px;
+}
+
+.repo-filtros button {
+  border: 0;
+  border-radius: 999px;
+  padding: 6px 14px;
+  font-size: 12px;
+  background: var(--bg);
+  color: var(--muted);
+  transition: background 0.15s;
+}
+
+.repo-filtros button:hover:not(.is-active) {
+  background: var(--line);
+}
+
+.repo-filtros button.is-active {
+  background: var(--teal-600);
+  color: #fff;
+  font-weight: 600;
+}
+
+/* Tabla */
+.repo-tabla__scroll {
+  overflow-x: auto;
+}
+
+.repo-tabla {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+}
+
+.repo-tabla th {
+  text-align: left;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--muted);
+  background: var(--bg);
+  padding: 12px 10px;
+  white-space: nowrap;
+}
+
+.repo-tabla td {
+  padding: 16px 10px;
+  border-top: 1px solid var(--line);
+  white-space: nowrap;
+}
+
+.repo-tabla tr.is-selected td {
+  background: var(--topbar);
+}
+
+.repo-tabla__check {
+  width: 44px;
+  padding-left: 20px !important;
+}
+
+.repo-tabla input[type='checkbox'] {
+  width: 17px;
+  height: 17px;
+  accent-color: var(--teal-600);
+  cursor: pointer;
+}
+
+.repo-tabla__nombre {
+  font-weight: 700;
+  color: var(--text);
+}
+
+.repo-tabla__muted {
+  color: var(--muted);
+}
+
+.repo-tabla__vacio {
+  text-align: center;
+  color: var(--muted);
+  padding: 32px 10px !important;
+}
+
+.repo-stock {
+  font-weight: 700;
+}
+
+.repo-stock--agotado {
+  color: var(--red-text);
+}
+
+.repo-stock--bajo {
+  color: var(--orange-text);
+}
+
+.repo-stock--porVencer {
+  color: var(--text);
+}
+
+/* Orden de reposición */
+.repo-orden {
+  padding: 20px;
+}
+
+.repo-orden__vacio {
+  color: var(--muted);
+  font-size: 13px;
+  margin: 4px 0 12px;
+}
+
+.repo-orden__grupo {
+  margin-bottom: 8px;
+}
+
+.repo-orden__proveedor {
+  display: block;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--teal-600);
+  margin-bottom: 6px;
+}
+
+.repo-orden__item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 6px 0;
+  font-size: 14px;
+}
+
+.repo-cantidad {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 4px 8px;
+  background: var(--topbar);
+}
+
+.repo-cantidad button {
+  border: 0;
+  background: none;
+  color: var(--teal-600);
+  display: grid;
+  place-items: center;
+  padding: 2px;
+}
+
+.repo-cantidad span {
+  min-width: 22px;
+  text-align: center;
+  font-weight: 700;
+}
+
+.repo-orden__resumen {
+  font-size: 12px;
+  color: var(--muted);
+  border-top: 1px solid var(--line);
+  padding-top: 10px;
+  margin: 8px 0 14px;
+}
+
+.repo-orden__generar {
+  width: 100%;
+}
+
+.repo-orden__limpiar {
+  display: block;
+  margin: 12px auto 0;
+  border: 0;
+  background: none;
+  color: var(--teal-600);
+  font-size: 13px;
+}
+
+.repo-orden__limpiar:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.repo-orden__aviso {
+  margin: 12px 0 0;
+  padding: 8px 12px;
+  border-radius: 8px;
+  background: var(--green-bg);
+  color: var(--green);
+  font-size: 13px;
+}
+
+/* Reposiciones recientes */
+.repo-recientes {
+  padding: 20px;
+}
+
+.repo-recientes ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.repo-recientes li {
+  display: grid;
+  grid-template-columns: 44px 1fr 32px auto;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 0;
+  border-top: 1px solid var(--line);
+  font-size: 14px;
+}
+
+.repo-recientes li:first-child {
+  border-top: 0;
+}
+
+.repo-recientes__fecha {
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.repo-recientes__producto {
+  font-weight: 500;
+}
