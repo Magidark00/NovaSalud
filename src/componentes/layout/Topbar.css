@@ -43,7 +43,14 @@
 .topbar__user {
   display: flex;
   align-items: center;
-  gap: 16px;
+  gap: 14px;
+}
+
+.topbar__pos-btn {
+  height: 38px;
+  padding: 0 14px;
+  font-size: 13px;
+  border-radius: 9px;
 }
 
 .topbar__bell {
@@ -151,7 +158,8 @@
     padding: 0 16px;
   }
 
-  .topbar__role {
+  .topbar__role,
+  .topbar__pos-btn span {
     display: none;
   }
 }

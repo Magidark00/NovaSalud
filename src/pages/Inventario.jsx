@@ -107,7 +107,7 @@ export default function Inventario() {
     try {
       await guardarProducto(producto)
       setFormulario(null)
-      setAviso(formulario?.id ? 'Producto actualizado en la base de datos.' : 'Producto registrado en la base de datos.')
+      setAviso(formulario?.id ? 'Producto actualizado.' : 'Producto registrado.')
     } catch (err) {
       setAviso(err.message || 'No se pudo guardar el producto.')
     }
@@ -115,9 +115,10 @@ export default function Inventario() {
 
   async function confirmarEliminacion() {
     if (!confirmar) return
+    const idAEliminar = confirmar.id
+    setConfirmar(null)
     try {
-      await eliminarProducto(confirmar.id)
-      setConfirmar(null)
+      await eliminarProducto(idAEliminar)
       setAviso('Producto eliminado del inventario.')
     } catch (err) {
       setAviso(err.message || 'No se pudo eliminar el producto.')
@@ -255,7 +256,7 @@ export default function Inventario() {
               <button type="button" className="btn btn--outline" onClick={() => setFormulario(null)}>
                 Cancelar
               </button>
-              <button className="btn btn--primary">
+              <button type="submit" className="btn btn--primary">
                 {formulario.id ? 'Guardar cambios' : 'Guardar producto'}
               </button>
             </div>
@@ -285,10 +286,10 @@ export default function Inventario() {
               Las ventas ya registradas se conservarán en el historial.
             </div>
             <div className="dialogo__acciones">
-              <button className="btn btn--outline" onClick={() => setConfirmar(null)}>
+              <button type="button" className="btn btn--outline" onClick={() => setConfirmar(null)}>
                 Cancelar
               </button>
-              <button className="btn btn--danger" onClick={confirmarEliminacion}>
+              <button type="button" className="btn btn--danger" onClick={confirmarEliminacion}>
                 Sí, eliminar producto
               </button>
             </div>

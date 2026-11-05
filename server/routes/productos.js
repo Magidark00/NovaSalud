@@ -1,6 +1,6 @@
 import { Router } from 'express'
 import db from '../db.js'
-import { respaldarEnSupabase } from '../supabase.js'
+import { respaldarEnSupabase, sincronizarDesdeSupabase, supabaseActivo } from '../supabase.js'
 import { sanitizarTexto, verificarToken } from '../middleware/auth.js'
 
 const router = Router()
@@ -162,16 +162,25 @@ router.put('/:id', async (req, res) => {
     return res.status(400).json({ error: 'Datos de producto inválidos o incompletos.' })
   }
 
-  const existente = db.prepare('SELECT id FROM productos WHERE id = ? AND activo = 1').get(id)
-  if (!existente) {
-    return res.status(404).json({ error: 'Producto no encontrado.' })
+  let existente = db.prepare('SELECT id FROM productos WHERE id = ?').get(id)
+  if (!existente && supabaseActivo) {
+    await sincronizarDesdeSupabase(true)
+    existente = db.prepare('SELECT id FROM productos WHERE id = ?').get(id)
   }
 
-  db.prepare(`
-    UPDATE productos
-    SET nombre = ?, presentacion = ?, categoria = ?, proveedor = ?, precio = ?, stock = ?, stock_minimo = ?, vence = ?, actualizado_en = datetime('now', 'localtime')
-    WHERE id = ?
-  `).run(nombre, presentacion, categoria, proveedor, precio, stock, stockMinimo, vence, id)
+  if (existente) {
+    db.prepare(`
+      UPDATE productos
+      SET nombre = ?, presentacion = ?, categoria = ?, proveedor = ?, precio = ?, stock = ?, stock_minimo = ?, vence = ?, activo = 1, actualizado_en = datetime('now', 'localtime')
+      WHERE id = ?
+    `).run(nombre, presentacion, categoria, proveedor, precio, stock, stockMinimo, vence, id)
+  } else {
+    const codigo = sanitizarTexto(req.body?.codigo || `NS${Date.now()}`, 40)
+    db.prepare(`
+      INSERT INTO productos (id, codigo, nombre, presentacion, categoria, proveedor, precio, stock, stock_minimo, vence, activo)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1)
+    `).run(id, codigo, nombre, presentacion, categoria, proveedor, precio, stock, stockMinimo, vence)
+  }
 
   const actualizado = db
     .prepare('SELECT id, codigo, nombre, presentacion, categoria, proveedor, precio, stock, stock_minimo, vence FROM productos WHERE id = ?')
@@ -189,6 +198,7 @@ router.put('/:id', async (req, res) => {
       stock,
       stock_minimo: stockMinimo,
       vence,
+      activo: true,
     },
     `id=eq.${id}`
   )
@@ -198,7 +208,7 @@ router.put('/:id', async (req, res) => {
 
 /**
  * DELETE /api/productos/:id
- * Realiza baja lógica del producto para conservar integridad en el historial de ventas
+ * Realiza baja lógica del producto en SQLite y Supabase sin error de desfase entre instancias Serverless
  */
 router.delete('/:id', async (req, res) => {
   const id = Number(req.params.id)
@@ -206,13 +216,9 @@ router.delete('/:id', async (req, res) => {
     return res.status(400).json({ error: 'ID de producto inválido.' })
   }
 
-  const resultado = db
-    .prepare("UPDATE productos SET activo = 0, actualizado_en = datetime('now', 'localtime') WHERE id = ? AND activo = 1")
-    .run(id)
-
-  if (resultado.changes === 0) {
-    return res.status(404).json({ error: 'Producto no encontrado.' })
-  }
+  db.prepare(
+    "UPDATE productos SET activo = 0, actualizado_en = datetime('now', 'localtime') WHERE id = ?"
+  ).run(id)
 
   await respaldarEnSupabase('productos', 'PATCH', { activo: false }, `id=eq.${id}`)
 

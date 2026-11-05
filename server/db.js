@@ -23,12 +23,6 @@ db.exec('PRAGMA journal_mode = WAL;')
 
 /**
  * Inicializa todas las tablas del sistema Nova Salud
- * Incluye esquema completo para:
- * - Usuarios y Autenticación (Seguridad / Roles)
- * - Productos (Inventario)
- * - Ventas y Detalle de Ventas (POS y Dashboard)
- * - Clientes (Directorio e historial de compras por cliente)
- * - Órdenes de Reposición y Detalle (Abastecimiento y recepción de stock)
  */
 export function inicializarBaseDeDatos() {
   db.exec(`
@@ -76,6 +70,8 @@ export function inicializarBaseDeDatos() {
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       numero_boleta INTEGER UNIQUE NOT NULL,
       codigo_boleta TEXT UNIQUE NOT NULL,
+      tipo_comprobante TEXT NOT NULL DEFAULT 'Boleta',
+      documento_cliente TEXT NOT NULL DEFAULT '',
       cliente_id INTEGER REFERENCES clientes(id) ON DELETE SET NULL,
       cliente_nombre TEXT NOT NULL DEFAULT 'Cliente general',
       usuario_id INTEGER REFERENCES usuarios(id) ON DELETE SET NULL,
@@ -139,11 +135,19 @@ export function inicializarBaseDeDatos() {
     }
   }
 
+  const columnasVentas = db.prepare('PRAGMA table_info(ventas)').all()
+  if (!columnasVentas.some((c) => c.name === 'tipo_comprobante')) {
+    db.exec("ALTER TABLE ventas ADD COLUMN tipo_comprobante TEXT NOT NULL DEFAULT 'Boleta';")
+  }
+  if (!columnasVentas.some((c) => c.name === 'documento_cliente')) {
+    db.exec("ALTER TABLE ventas ADD COLUMN documento_cliente TEXT NOT NULL DEFAULT '';")
+  }
+
   sembrarDatosIniciales()
 }
 
 function sembrarDatosIniciales() {
-  // 1. Sembrar Usuarios por defecto (contraseñas encriptadas con bcrypt)
+  // 1. Sembrar Usuarios por defecto
   const totalUsuarios = db.prepare('SELECT COUNT(*) AS count FROM usuarios').get().count
   if (totalUsuarios === 0) {
     const insertUsuario = db.prepare(`
@@ -199,12 +203,16 @@ function sembrarDatosIniciales() {
     }
   }
 
-  // 4. Sembrar Ventas iniciales y Resumen Semanal para el Dashboard
+  // 4. Sembrar Ventas iniciales (Boleta, Factura y Nota de venta)
   const totalVentas = db.prepare('SELECT COUNT(*) AS count FROM ventas').get().count
   if (totalVentas === 0) {
     const insertVenta = db.prepare(`
-      INSERT INTO ventas (numero_boleta, codigo_boleta, cliente_id, cliente_nombre, usuario_id, metodo_pago, subtotal, igv, descuento, total, recibido, vuelto, fecha)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now', 'localtime'))
+      INSERT INTO ventas (
+        numero_boleta, codigo_boleta, tipo_comprobante, documento_cliente,
+        cliente_id, cliente_nombre, usuario_id, metodo_pago,
+        subtotal, igv, descuento, total, recibido, vuelto, fecha
+      )
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `)
     const insertDetalle = db.prepare(`
       INSERT INTO detalle_ventas (venta_id, producto_id, producto_nombre, cantidad, precio_unitario, importe)
@@ -213,24 +221,59 @@ function sembrarDatosIniciales() {
 
     const ventasSemilla = [
       {
+        numero: 456,
+        codigo: 'F001-000101',
+        tipo: 'Factura',
+        documento: '20548963214',
+        clienteId: null,
+        clienteNombre: 'Clínica San Gabriel S.A.C.',
+        pago: 'Tarjeta',
+        total: 125.0,
+        fecha: '2026-11-03 16:40:00',
+        items: [
+          { productoId: 1, nombre: 'Paracetamol 500 mg', cantidad: 4, precio: 12.5, importe: 50.0 },
+          { productoId: 4, nombre: 'Ibuprofeno 400 mg', cantidad: 5, precio: 15.0, importe: 75.0 },
+        ],
+      },
+      {
+        numero: 457,
+        codigo: 'NV01-000201',
+        tipo: 'Nota de venta',
+        documento: '41876529',
+        clienteId: 3,
+        clienteNombre: 'Rosa Huamán',
+        pago: 'Plin',
+        total: 24.0,
+        fecha: '2026-11-04 09:15:00',
+        items: [
+          { productoId: 6, nombre: 'Vitamina C 500 mg', cantidad: 1, precio: 24.0, importe: 24.0 },
+        ],
+      },
+      {
         numero: 458,
         codigo: 'B001-000458',
+        tipo: 'Boleta',
+        documento: '70234518',
         clienteId: 2,
         clienteNombre: 'Carlos Quispe',
         pago: 'Efectivo',
-        total: 18.5,
+        total: 19.0,
+        fecha: '2026-11-04 11:20:00',
         items: [
           { productoId: 1, nombre: 'Paracetamol 500 mg', cantidad: 1, precio: 12.5, importe: 12.5 },
-          { productoId: 3, nombre: 'Loratadina 10 mg', cantidad: 1, precio: 6.0, importe: 6.0 },
+          { productoId: 3, nombre: 'Loratadina 10 mg', cantidad: 1, precio: 6.5, importe: 6.5 },
         ],
       },
       {
         numero: 459,
         codigo: 'B001-000459',
+        tipo: 'Boleta',
+        documento: '45892136',
         clienteId: 1,
         clienteNombre: 'María Torres',
         pago: 'Yape',
         total: 42.0,
+        fecha: '2026-11-04 14:35:00',
         items: [
           { productoId: 7, nombre: 'Losartán 50 mg', cantidad: 2, precio: 21.0, importe: 42.0 },
         ],
@@ -238,10 +281,13 @@ function sembrarDatosIniciales() {
       {
         numero: 460,
         codigo: 'B001-000460',
+        tipo: 'Boleta',
+        documento: '00000000',
         clienteId: null,
         clienteNombre: 'Cliente general',
         pago: 'Tarjeta',
         total: 9.5,
+        fecha: '2026-11-04 17:10:00',
         items: [
           { productoId: 8, nombre: 'Omeprazol 20 mg', cantidad: 1, precio: 9.5, importe: 9.5 },
         ],
@@ -254,6 +300,8 @@ function sembrarDatosIniciales() {
       const info = insertVenta.run(
         v.numero,
         v.codigo,
+        v.tipo,
+        v.documento,
         v.clienteId,
         v.clienteNombre,
         1,
@@ -263,7 +311,8 @@ function sembrarDatosIniciales() {
         0,
         v.total,
         v.total,
-        0
+        0,
+        v.fecha
       )
       for (const item of v.items) {
         insertDetalle.run(info.lastInsertRowid, item.productoId, item.nombre, item.cantidad, item.precio, item.importe)

@@ -1,5 +1,4 @@
-import { useEffect, useState } from 'react'
-import { Link } from 'react-router-dom'
+import { useCallback, useEffect, useState } from 'react'
 import { CircleX, Plus, ShoppingCart, TriangleAlert } from 'lucide-react'
 import PageHeader from '../componentes/common/PageHeader'
 import StatCard from '../componentes/common/StatCard'
@@ -12,11 +11,13 @@ import {
   ULTIMAS_VENTAS,
   VENTAS_SEMANA,
 } from '../data/dashboard'
+import { usePos } from '../context/PosContext'
 import { apiObtenerDashboard } from '../services/api'
 import { formatSoles } from '../utils/formato'
 import './Dashboard.css'
 
 export default function Dashboard() {
+  const { abrirPos } = usePos()
   const [datos, setDatos] = useState({
     resumen: RESUMEN,
     ventasSemana: VENTAS_SEMANA,
@@ -24,29 +25,30 @@ export default function Dashboard() {
     ultimasVentas: ULTIMAS_VENTAS,
   })
 
-  useEffect(() => {
-    let activo = true
+  const cargarDashboard = useCallback(() => {
     apiObtenerDashboard()
-      .then((respuesta) => {
-        if (activo) setDatos(respuesta)
-      })
-      .catch(() => {
-        // Conserva datos de respaldo si hay corte temporal
-      })
-    return () => {
-      activo = false
-    }
+      .then((respuesta) => setDatos(respuesta))
+      .catch(() => {})
   }, [])
+
+  useEffect(() => {
+    cargarDashboard()
+  }, [cargarDashboard])
+
+  useEffect(() => {
+    window.addEventListener('novasalud:venta-registrada', cargarDashboard)
+    return () => window.removeEventListener('novasalud:venta-registrada', cargarDashboard)
+  }, [cargarDashboard])
 
   const { resumen, ventasSemana, alertasReposicion, ultimasVentas } = datos
 
   return (
     <>
       <PageHeader titulo="Dashboard" estado="En vivo">
-        <Link to="/ventas" className="btn btn--primary">
+        <button type="button" className="btn btn--primary" onClick={() => abrirPos()}>
           <Plus size={18} aria-hidden="true" />
           Nueva venta
-        </Link>
+        </button>
       </PageHeader>
 
       <section className="dashboard__stats" aria-label="Resumen del día">

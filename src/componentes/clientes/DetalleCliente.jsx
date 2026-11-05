@@ -1,10 +1,12 @@
-import { Link } from 'react-router-dom'
 import { Plus } from 'lucide-react'
 import AvatarCliente from './AvatarCliente'
+import { usePos } from '../../context/PosContext'
 import { formatFechaCorta, formatSoles } from '../../utils/formato'
 import './DetalleCliente.css'
 
 export default function DetalleCliente({ cliente }) {
+  const { abrirPos } = usePos()
+
   if (!cliente) {
     return (
       <aside className="detalle card" aria-label="Detalle del cliente">
@@ -35,13 +37,14 @@ export default function DetalleCliente({ cliente }) {
         </div>
       </dl>
 
-      <Link
-        to={`/ventas?cliente=${encodeURIComponent(cliente.nombre)}`}
+      <button
+        type="button"
         className="btn btn--primary btn--block"
+        onClick={() => abrirPos({ cliente: cliente.nombre })}
       >
         <Plus size={18} aria-hidden="true" />
         Nueva venta
-      </Link>
+      </button>
 
       <section className="detalle__compras" aria-label="Últimas compras">
         <h3>Últimas compras</h3>

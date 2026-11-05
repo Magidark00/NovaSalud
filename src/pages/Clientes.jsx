@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { Download, Plus, ShoppingBag, UserPlus, Users, UserRoundPen, Trash2 } from 'lucide-react'
 import PageHeader from '../componentes/common/PageHeader'
@@ -44,11 +44,9 @@ export default function Clientes() {
   const [confirmar, setConfirmar] = useState(null)
   const [aviso, setAviso] = useState('')
 
-  useEffect(() => {
-    let activo = true
+  const cargarClientes = useCallback(() => {
     apiObtenerClientes()
       .then((datos) => {
-        if (!activo) return
         if (Array.isArray(datos.clientes)) {
           setClientes(datos.clientes)
           if (datos.clientes.length > 0) {
@@ -60,10 +58,16 @@ export default function Clientes() {
         if (datos.resumen) setResumen(datos.resumen)
       })
       .catch(() => {})
-    return () => {
-      activo = false
-    }
   }, [])
+
+  useEffect(() => {
+    cargarClientes()
+  }, [cargarClientes])
+
+  useEffect(() => {
+    window.addEventListener('novasalud:venta-registrada', cargarClientes)
+    return () => window.removeEventListener('novasalud:venta-registrada', cargarClientes)
+  }, [cargarClientes])
 
   const filtrados = useMemo(() => {
     const texto = busqueda.trim()
@@ -123,14 +127,15 @@ export default function Clientes() {
 
   async function confirmarEliminacion() {
     if (!confirmar) return
+    const idAEliminar = confirmar.id
+    setConfirmar(null)
+    setClientes((prev) => prev.filter((c) => c.id !== idAEliminar))
+    if (seleccionadoId === idAEliminar) setSeleccionadoId(null)
+    setAviso('Cliente eliminado.')
     try {
-      await apiEliminarCliente(confirmar.id)
-      setClientes((prev) => prev.filter((c) => c.id !== confirmar.id))
-      if (seleccionadoId === confirmar.id) setSeleccionadoId(null)
-      setConfirmar(null)
-      setAviso('Cliente eliminado de la base de datos.')
-    } catch (err) {
-      setAviso(err.message || 'No se pudo eliminar el cliente.')
+      await apiEliminarCliente(idAEliminar)
+    } catch {
+      cargarClientes()
     }
   }
 
@@ -259,7 +264,7 @@ export default function Clientes() {
               <button type="button" className="btn btn--outline" onClick={() => setFormulario(null)}>
                 Cancelar
               </button>
-              <button className="btn btn--primary">
+              <button type="submit" className="btn btn--primary">
                 {formulario.id ? 'Guardar cambios' : 'Guardar cliente'}
               </button>
             </div>
@@ -289,10 +294,10 @@ export default function Clientes() {
               El historial de compras existente se conservará.
             </div>
             <div className="dialogo__acciones">
-              <button className="btn btn--outline" onClick={() => setConfirmar(null)}>
+              <button type="button" className="btn btn--outline" onClick={() => setConfirmar(null)}>
                 Cancelar
               </button>
-              <button className="btn btn--danger" onClick={confirmarEliminacion}>
+              <button type="button" className="btn btn--danger" onClick={confirmarEliminacion}>
                 Sí, eliminar cliente
               </button>
             </div>

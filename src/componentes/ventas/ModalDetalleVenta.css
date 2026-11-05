@@ -1,0 +1,108 @@
+.comprobante-modal {
+  display: grid;
+  gap: 18px;
+}
+
+.comprobante-modal__cabecera {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 16px;
+  padding: 16px 18px;
+  background: #fff0e7;
+  border: 1px solid #eddfd7;
+  border-radius: 12px;
+}
+
+.comprobante-modal__cliente {
+  font-size: 18px;
+  font-weight: 700;
+  margin-top: 8px;
+}
+
+.comprobante-modal__sub {
+  margin-top: 4px;
+  font-size: 13px;
+  color: var(--muted);
+}
+
+.comprobante-modal__pago-box {
+  text-align: right;
+  display: grid;
+  gap: 2px;
+}
+
+.comprobante-modal__pago-box small {
+  font-size: 11px;
+  color: var(--muted);
+  text-transform: uppercase;
+}
+
+.comprobante-modal__pago-box strong {
+  font-size: 15px;
+  color: var(--teal-700);
+}
+
+.comprobante-modal__pago-box span {
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.comprobante-modal__tabla-wrap {
+  max-height: 260px;
+  overflow: auto;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 4px 12px;
+  background: #fff;
+}
+
+.comprobante-modal__totales {
+  margin-left: auto;
+  width: min(300px, 100%);
+  display: grid;
+  gap: 8px;
+  padding: 14px 16px;
+  border-radius: 12px;
+  background: #fff0e7;
+  border: 1px solid #eddfd7;
+  font-size: 14px;
+}
+
+.comprobante-modal__totales > div {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.comprobante-modal__total-final {
+  padding-top: 8px;
+  margin-top: 4px;
+  border-top: 1px solid var(--line);
+  font-size: 16px;
+  color: var(--teal-700);
+}
+
+.tipo-pill {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.tipo-pill--boleta {
+  background: var(--teal-100);
+  color: var(--teal-700);
+}
+
+.tipo-pill--factura {
+  background: #e0e7ff;
+  color: #3730a3;
+}
+
+.tipo-pill--nota {
+  background: var(--orange-bg);
+  color: var(--orange-text);
+}

@@ -1,11 +1,12 @@
 import { useMemo, useState } from 'react'
 import { calcularTotales, redondear } from '../utils/formato'
 
-// Toda la lógica de la venta en curso (carrito, totales, pago).
-// `productos` es la lista actual de productos con su stock.
+// Toda la lógica de la venta en curso (carrito, comprobante, totales, pago).
 export function useVenta(productos) {
   const [items, setItems] = useState([]) // [{ id, cantidad }]
+  const [tipoComprobante, setTipoComprobante] = useState('Boleta')
   const [cliente, setCliente] = useState('Cliente general')
+  const [documentoCliente, setDocumentoCliente] = useState('')
   const [metodoPago, setMetodoPago] = useState('efectivo')
   const [recibido, setRecibido] = useState('')
 
@@ -18,7 +19,7 @@ export function useVenta(productos) {
           return { ...p, cantidad: item.cantidad, importe: redondear(p.precio * item.cantidad) }
         })
         .filter(Boolean),
-    [items, productos],
+    [items, productos]
   )
 
   const unidades = lineas.reduce((suma, l) => suma + l.cantidad, 0)
@@ -50,7 +51,7 @@ export function useVenta(productos) {
         if (nueva <= 0) return []
         if (p && nueva > p.stock) return [i]
         return [{ ...i, cantidad: nueva }]
-      }),
+      })
     )
   }
 
@@ -59,7 +60,9 @@ export function useVenta(productos) {
 
   function reiniciar() {
     setItems([])
+    setTipoComprobante('Boleta')
     setCliente('Cliente general')
+    setDocumentoCliente('')
     setMetodoPago('efectivo')
     setRecibido('')
   }
@@ -68,8 +71,12 @@ export function useVenta(productos) {
     lineas,
     unidades,
     totales,
+    tipoComprobante,
+    setTipoComprobante,
     cliente,
     setCliente,
+    documentoCliente,
+    setDocumentoCliente,
     metodoPago,
     setMetodoPago,
     recibido,

@@ -1,8 +1,9 @@
-import { Bell, ChevronDown, LogOut, Search, ShieldCheck } from 'lucide-react'
+import { Bell, ChevronDown, LogOut, Search, ShieldCheck, ShoppingCart } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext'
 import { useInventario } from '../../context/InventarioContext'
+import { usePos } from '../../context/PosContext'
 import { estadoProducto, normalizar } from '../../utils/formato'
 import { CLIENTES_EJEMPLO } from '../../data/clientes'
 import { apiObtenerClientes } from '../../services/api'
@@ -13,6 +14,7 @@ import './Topbar.css'
 export default function Topbar() {
   const { usuario, cerrarSesion } = useAuth()
   const { productos } = useInventario()
+  const { abrirPos } = usePos()
   const [clientes, setClientes] = useState(CLIENTES_EJEMPLO)
   const [busqueda, setBusqueda] = useState('')
   const [mostrarResultados, setMostrarResultados] = useState(false)
@@ -116,6 +118,15 @@ export default function Topbar() {
       <div className="topbar__user">
         <button
           type="button"
+          className="btn btn--primary topbar__pos-btn"
+          onClick={() => abrirPos()}
+        >
+          <ShoppingCart size={17} aria-hidden="true" />
+          <span>Punto de Venta (POS)</span>
+        </button>
+
+        <button
+          type="button"
           className="topbar__bell"
           aria-label={`Notificaciones, ${alertas.length} alertas`}
           aria-expanded={mostrarAvisos}
@@ -181,10 +192,11 @@ export default function Topbar() {
               En Reposición podrás revisar las cantidades sugeridas y generar una orden por proveedor.
             </p>
             <div className="dialogo__acciones">
-              <button className="btn btn--outline" onClick={() => setMostrarAvisos(false)}>
+              <button type="button" className="btn btn--outline" onClick={() => setMostrarAvisos(false)}>
                 Más tarde
               </button>
               <button
+                type="button"
                 className="btn btn--primary"
                 onClick={() => {
                   navegar('/reposicion')

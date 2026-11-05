@@ -47,14 +47,15 @@ export default function InventarioProvider({ children }) {
   }
 
   async function eliminarProducto(id) {
+    // Actualización optimista inmediata en la interfaz sin recargar la página
+    setProductos((prev) => prev.filter((p) => Number(p.id) !== Number(id)))
     await apiEliminarProducto(id)
-    setProductos((prev) => prev.filter((p) => p.id !== id))
   }
 
   async function guardarProducto(producto) {
     if (producto.id) {
       const actualizado = await apiActualizarProducto(producto.id, producto)
-      setProductos((prev) => prev.map((p) => (p.id === actualizado.id ? actualizado : p)))
+      setProductos((prev) => prev.map((p) => (Number(p.id) === Number(actualizado.id) ? actualizado : p)))
       return actualizado
     } else {
       const creado = await apiCrearProducto(producto)

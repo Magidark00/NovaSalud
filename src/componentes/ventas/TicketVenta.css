@@ -19,7 +19,48 @@
 
 .ticket__code {
   font-size: 12px;
+  font-weight: 700;
+  color: var(--teal-700);
+  background: var(--teal-100);
+  padding: 2px 8px;
+  border-radius: 999px;
+}
+
+.ticket__tipos {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 6px;
+  padding: 4px;
+  background: #fdeee6;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  margin-bottom: 2px;
+}
+
+.ticket__tipo-btn {
+  height: 32px;
+  border: 0;
+  border-radius: 7px;
+  background: transparent;
+  font-size: 12px;
+  font-weight: 600;
   color: var(--muted);
+}
+
+.ticket__tipo-btn.is-active {
+  background: var(--teal-600);
+  color: #fff;
+}
+
+.ticket__doc-field input {
+  width: 100%;
+  height: 38px;
+  margin-top: 4px;
+  padding: 0 12px;
+  border-radius: 10px;
+  border: 1px solid var(--line);
+  background: #fdeee6;
+  font-size: 13px;
 }
 
 .ticket__row {

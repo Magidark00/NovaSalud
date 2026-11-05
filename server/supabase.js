@@ -33,15 +33,20 @@ export async function supabaseFetch(ruta, opciones = {}) {
   }
 }
 
-let sincronizadoInicial = false
+let ultimaSincronizacion = 0
 let promesaSincronizacion = null
+// En Vercel Serverless sincronizamos frecuentemente para evitar desfase entre instancias Lambda
+const TTL_SYNC_MS = process.env.VERCEL ? 1500 : 30000
 
 /**
- * Al iniciar el servidor o función Serverless en Vercel, descarga el estado
- * persistido en Supabase (si las variables están configuradas) hacia el motor local.
+ * Sincroniza el estado desde Supabase hacia la base de datos local SQLite
  */
-export function sincronizarDesdeSupabase() {
-  if (!supabaseActivo || sincronizadoInicial) return Promise.resolve()
+export function sincronizarDesdeSupabase(forzar = false) {
+  if (!supabaseActivo) return Promise.resolve()
+  const ahora = Date.now()
+  if (!forzar && ultimaSincronizacion > 0 && ahora - ultimaSincronizacion < TTL_SYNC_MS) {
+    return Promise.resolve()
+  }
   if (promesaSincronizacion) return promesaSincronizacion
 
   promesaSincronizacion = (async () => {
@@ -76,7 +81,7 @@ export function sincronizarDesdeSupabase() {
             Number(p.stock),
             Number(p.stock_minimo),
             p.vence,
-            p.activo === false ? 0 : 1
+            p.activo === false || p.activo === 0 ? 0 : 1
           )
         }
       }
@@ -106,14 +111,22 @@ export function sincronizarDesdeSupabase() {
 
       if (Array.isArray(ventas) && ventas.length > 0) {
         const upsertVenta = db.prepare(`
-          INSERT OR REPLACE INTO ventas (id, numero_boleta, codigo_boleta, cliente_id, cliente_nombre, usuario_id, metodo_pago, subtotal, igv, descuento, total, recibido, vuelto, fecha)
-          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+          INSERT OR REPLACE INTO ventas (
+            id, numero_boleta, codigo_boleta, tipo_comprobante, documento_cliente,
+            cliente_id, cliente_nombre, usuario_id, metodo_pago,
+            subtotal, igv, descuento, total, recibido, vuelto, fecha
+          )
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         `)
         for (const v of ventas) {
+          const tipoInferido = v.tipo_comprobante
+            || (String(v.codigo_boleta).startsWith('F') ? 'Factura' : String(v.codigo_boleta).startsWith('NV') ? 'Nota de venta' : 'Boleta')
           upsertVenta.run(
             Number(v.id),
             Number(v.numero_boleta),
             v.codigo_boleta,
+            tipoInferido,
+            v.documento_cliente || '',
             v.cliente_id ? Number(v.cliente_id) : null,
             v.cliente_nombre || 'Cliente general',
             v.usuario_id ? Number(v.usuario_id) : 1,
@@ -188,13 +201,15 @@ export function sincronizarDesdeSupabase() {
       }
 
       db.exec('COMMIT;')
-      sincronizadoInicial = true
+      ultimaSincronizacion = Date.now()
     } catch {
       try {
         db.exec('ROLLBACK;')
       } catch {
         // Ignorar
       }
+    } finally {
+      promesaSincronizacion = null
     }
   })()
 

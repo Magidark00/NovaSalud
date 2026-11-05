@@ -1,6 +1,6 @@
 import { Router } from 'express'
 import db from '../db.js'
-import { respaldarEnSupabase } from '../supabase.js'
+import { respaldarEnSupabase, sincronizarDesdeSupabase, supabaseActivo } from '../supabase.js'
 import { sanitizarTexto, verificarToken } from '../middleware/auth.js'
 
 const router = Router()
@@ -22,7 +22,6 @@ function construirClienteConCompras(fila, stmtVentasCliente) {
     pago: v.pago,
   }))
 
-  // Combinar ventas reales en BD con las históricas sin duplicar código de boleta
   const codigosVistos = new Set()
   const ultimasCompras = []
   for (const item of [...ventasReales, ...historicas]) {
@@ -46,7 +45,6 @@ function construirClienteConCompras(fila, stmtVentasCliente) {
 
 /**
  * GET /api/clientes
- * Devuelve la lista de clientes registrados, su historial de compras y el resumen mensual
  */
 router.get('/', (req, res) => {
   const busqueda = sanitizarTexto(req.query.busqueda ?? '', 100)
@@ -79,7 +77,7 @@ router.get('/', (req, res) => {
   const totalClientes = db.prepare('SELECT COUNT(*) AS count FROM clientes').get().count
   const extraNuevos = Math.max(0, totalClientes - 128)
   const totalVentas = db.prepare('SELECT COUNT(*) AS count FROM ventas').get().count
-  const extraVentas = Math.max(0, totalVentas - 3)
+  const extraVentas = Math.max(0, totalVentas - 5)
 
   return res.json({
     clientes,
@@ -93,7 +91,6 @@ router.get('/', (req, res) => {
 
 /**
  * POST /api/clientes
- * Registra un nuevo cliente con validación de DNI y consultas parametrizadas
  */
 router.post('/', async (req, res) => {
   const nombre = sanitizarTexto(req.body?.nombre, 120)
@@ -139,7 +136,6 @@ router.post('/', async (req, res) => {
 
 /**
  * PUT /api/clientes/:id
- * Actualiza los datos de un cliente existente
  */
 router.put('/:id', async (req, res) => {
   const id = Number(req.params.id)
@@ -155,13 +151,18 @@ router.put('/:id', async (req, res) => {
     return res.status(400).json({ error: 'Nombre, teléfono y un DNI válido de 8 dígitos son obligatorios.' })
   }
 
-  const existente = db.prepare('SELECT id FROM clientes WHERE id = ?').get(id)
-  if (!existente) {
-    return res.status(404).json({ error: 'Cliente no encontrado.' })
+  let existente = db.prepare('SELECT id FROM clientes WHERE id = ?').get(id)
+  if (!existente && supabaseActivo) {
+    await sincronizarDesdeSupabase(true)
+    existente = db.prepare('SELECT id FROM clientes WHERE id = ?').get(id)
   }
 
   try {
-    db.prepare('UPDATE clientes SET nombre = ?, dni = ?, telefono = ? WHERE id = ?').run(nombre, dni, telefono, id)
+    if (existente) {
+      db.prepare('UPDATE clientes SET nombre = ?, dni = ?, telefono = ? WHERE id = ?').run(nombre, dni, telefono, id)
+    } else {
+      db.prepare("INSERT INTO clientes (id, dni, nombre, telefono, compras, ultima_compra, total_gastado, ultimas_compras_json) VALUES (?, ?, ?, ?, 0, '', 0, '[]')").run(id, dni, nombre, telefono)
+    }
     db.prepare('UPDATE ventas SET cliente_nombre = ? WHERE cliente_id = ?').run(nombre, id)
 
     await respaldarEnSupabase('clientes', 'PATCH', { nombre, dni, telefono }, `id=eq.${id}`)
@@ -188,7 +189,6 @@ router.put('/:id', async (req, res) => {
 
 /**
  * DELETE /api/clientes/:id
- * Elimina un cliente conservando sus ventas registradas en la tabla ventas
  */
 router.delete('/:id', async (req, res) => {
   const id = Number(req.params.id)
@@ -196,11 +196,7 @@ router.delete('/:id', async (req, res) => {
     return res.status(400).json({ error: 'ID de cliente inválido.' })
   }
 
-  const resultado = db.prepare('DELETE FROM clientes WHERE id = ?').run(id)
-  if (resultado.changes === 0) {
-    return res.status(404).json({ error: 'Cliente no encontrado.' })
-  }
-
+  db.prepare('DELETE FROM clientes WHERE id = ?').run(id)
   await respaldarEnSupabase('clientes', 'DELETE', null, `id=eq.${id}`)
 
   return res.json({ ok: true, id })

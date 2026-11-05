@@ -1,4 +1,3 @@
-import { Link } from 'react-router-dom'
 import { Check, ChevronDown, User } from 'lucide-react'
 import TicketItem from './TicketItem'
 import MetodosPago from './MetodosPago'
@@ -6,7 +5,8 @@ import { CLIENTES } from '../../data/productos'
 import { formatSoles } from '../../utils/formato'
 import './TicketVenta.css'
 
-// `venta` es lo que devuelve el hook useVenta()
+const TIPOS_COMPROBANTE = ['Boleta', 'Factura', 'Nota de venta']
+
 export default function TicketVenta({
   venta,
   boleta,
@@ -18,8 +18,12 @@ export default function TicketVenta({
     lineas,
     unidades,
     totales,
+    tipoComprobante,
+    setTipoComprobante,
     cliente,
     setCliente,
+    documentoCliente,
+    setDocumentoCliente,
     metodoPago,
     setMetodoPago,
     recibido,
@@ -38,13 +42,27 @@ export default function TicketVenta({
   return (
     <aside className="ticket card" aria-label="Resumen de venta">
       <div className="ticket__head">
-        <h2>Resumen de venta</h2>
+        <h2>Emisión de comprobante</h2>
         <span className="ticket__code">{boleta}</span>
       </div>
 
+      <div className="ticket__tipos" role="group" aria-label="Tipo de comprobante">
+        {TIPOS_COMPROBANTE.map((tipo) => (
+          <button
+            key={tipo}
+            type="button"
+            className={`ticket__tipo-btn${tipoComprobante === tipo ? ' is-active' : ''}`}
+            onClick={() => setTipoComprobante(tipo)}
+          >
+            {tipo}
+          </button>
+        ))}
+      </div>
+
       <div className="ticket__row">
-        <label htmlFor="cliente" className="ticket__label">Cliente</label>
-        <Link to="/clientes" className="link-small">+ Nuevo cliente</Link>
+        <label htmlFor="cliente" className="ticket__label">
+          {tipoComprobante === 'Factura' ? 'Razón Social / Cliente' : 'Cliente'}
+        </label>
       </div>
       <div className="select">
         <User size={16} aria-hidden="true" />
@@ -54,6 +72,20 @@ export default function TicketVenta({
           ))}
         </select>
         <ChevronDown size={16} aria-hidden="true" />
+      </div>
+
+      <div className="ticket__doc-field">
+        <label htmlFor="doc-cliente" className="ticket__label">
+          {tipoComprobante === 'Factura' ? 'RUC (11 dígitos)' : 'DNI / Documento (opcional)'}
+        </label>
+        <input
+          id="doc-cliente"
+          type="text"
+          inputMode="numeric"
+          placeholder={tipoComprobante === 'Factura' ? 'Ej. 20608945123' : 'Ej. 45892136'}
+          value={documentoCliente}
+          onChange={(e) => setDocumentoCliente(e.target.value)}
+        />
       </div>
 
       <div className="ticket__row ticket__row--productos">
@@ -131,18 +163,21 @@ export default function TicketVenta({
         onClick={onCobrar}
       >
         <Check size={18} aria-hidden="true" />
-        {procesando ? 'Procesando...' : `Cobrar ${formatSoles(totales.total)}`}
+        {procesando ? 'Emitiendo...' : `Emitir ${tipoComprobante} · ${formatSoles(totales.total)}`}
       </button>
 
       {hayProductos && esEfectivo && !puedeCobrar && (
         <p className="ticket__hint">El efectivo recibido debe cubrir el total.</p>
       )}
 
-      <button type="button" className="btn btn--outline btn--block" disabled={!hayProductos || procesando} onClick={reiniciar}>
-        Cancelar venta
+      <button
+        type="button"
+        className="btn btn--outline btn--block"
+        disabled={!hayProductos || procesando}
+        onClick={reiniciar}
+      >
+        Limpiar venta
       </button>
-
-      <p className="ticket__note">Se emitirá una boleta al confirmar el pago</p>
     </aside>
   )
 }
