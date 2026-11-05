@@ -105,8 +105,15 @@ CREATE TABLE IF NOT EXISTS detalle_reposicion (
 );
 
 -- =============================================================================
--- SEMILLAS DE DATOS INICIALES (PRODUCTOS, CLIENTES, VENTAS Y REPOSICIÓN)
+-- SEMILLAS DE DATOS INICIALES (USUARIOS, PRODUCTOS, CLIENTES, VENTAS Y REPOSICIÓN)
 -- =============================================================================
+
+INSERT INTO usuarios (username, nombre, rol, iniciales, password_hash)
+VALUES
+  ('admin', 'Dra. Valeria Gómez', 'Administrador', 'VG', '$2b$10$8K1p/a0dL1LXMIgoEDFrwOfMQbLV3A4m2O6t8yB7C5a6R8q9E0W1u'),
+  ('farmaceutico', 'Lic. Lucía Salazar', 'Farmacéutico', 'LS', '$2b$10$8K1p/a0dL1LXMIgoEDFrwOfMQbLV3A4m2O6t8yB7C5a6R8q9E0W1u'),
+  ('cajero', 'Marco Paredes', 'Cajero', 'MP', '$2b$10$8K1p/a0dL1LXMIgoEDFrwOfMQbLV3A4m2O6t8yB7C5a6R8q9E0W1u')
+ON CONFLICT (username) DO NOTHING;
 
 INSERT INTO productos (codigo, nombre, presentacion, categoria, proveedor, precio, stock, stock_minimo, vence)
 VALUES
@@ -128,6 +135,20 @@ VALUES
   ('73015284', 'Luis Ramírez', '998 745 210', 3, '2026-10-25', 87.50, '[{"codigo":"B001-000449","fecha":"2026-10-25","total":30.0,"pago":"Efectivo"},{"codigo":"B001-000410","fecha":"2026-10-19","total":40.0,"pago":"Tarjeta"},{"codigo":"B001-000377","fecha":"2026-10-08","total":17.5,"pago":"Efectivo"}]'::jsonb)
 ON CONFLICT (dni) DO NOTHING;
 
+INSERT INTO ventas (numero_boleta, codigo_boleta, cliente_id, cliente_nombre, usuario_id, metodo_pago, subtotal, igv, descuento, total, recibido, vuelto)
+VALUES
+  (458, 'B001-000458', 2, 'Carlos Quispe', 1, 'Efectivo', 15.68, 2.82, 0, 18.50, 18.50, 0),
+  (459, 'B001-000459', 1, 'María Torres', 1, 'Yape', 35.59, 6.41, 0, 42.00, 42.00, 0),
+  (460, 'B001-000460', NULL, 'Cliente general', 1, 'Tarjeta', 8.05, 1.45, 0, 9.50, 9.50, 0)
+ON CONFLICT (numero_boleta) DO NOTHING;
+
+INSERT INTO detalle_ventas (venta_id, producto_id, producto_nombre, cantidad, precio_unitario, importe)
+VALUES
+  (1, 1, 'Paracetamol 500 mg', 1, 12.50, 12.50),
+  (1, 3, 'Loratadina 10 mg', 1, 6.00, 6.00),
+  (2, 7, 'Losartán 50 mg', 2, 21.00, 42.00),
+  (3, 8, 'Omeprazol 20 mg', 1, 9.50, 9.50);
+
 INSERT INTO ventas_semanales_resumen (dia, orden, ventas)
 VALUES
   ('Lun', 1, 180),
@@ -138,3 +159,16 @@ VALUES
   ('Sáb', 6, 690),
   ('Dom', 7, 570)
 ON CONFLICT (dia) DO NOTHING;
+
+INSERT INTO ordenes_reposicion (codigo, proveedor, fecha, estado, usuario_id)
+VALUES
+  ('R1', 'Droguería Perú', '2026-10-30', 'recibida', 1),
+  ('R2', 'Droguería Perú', '2026-10-28', 'pendiente', 1),
+  ('R3', 'Droguería Perú', '2026-10-25', 'recibida', 1)
+ON CONFLICT (codigo) DO NOTHING;
+
+INSERT INTO detalle_reposicion (orden_id, producto_id, producto_nombre, cantidad)
+VALUES
+  (1, 1, 'Paracetamol 500 mg', 50),
+  (2, 4, 'Ibuprofeno 400 mg', 40),
+  (3, 6, 'Vitamina C 500 mg', 30);
