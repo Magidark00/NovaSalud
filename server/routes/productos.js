@@ -1,5 +1,6 @@
 import { Router } from 'express'
 import db from '../db.js'
+import { respaldarEnSupabase } from '../supabase.js'
 import { sanitizarTexto, verificarToken } from '../middleware/auth.js'
 
 const router = Router()
@@ -64,7 +65,7 @@ router.get('/', (req, res) => {
  * POST /api/productos
  * Registra un nuevo producto en el inventario usando sentencias preparadas
  */
-router.post('/', (req, res) => {
+router.post('/', async (req, res) => {
   const nombre = sanitizarTexto(req.body?.nombre, 120)
   const presentacion = sanitizarTexto(req.body?.presentacion, 80)
   const categoria = sanitizarTexto(req.body?.categoria, 80)
@@ -103,6 +104,20 @@ router.post('/', (req, res) => {
       .prepare('SELECT id, codigo, nombre, presentacion, categoria, proveedor, precio, stock, stock_minimo, vence FROM productos WHERE id = ?')
       .get(info.lastInsertRowid)
 
+    await respaldarEnSupabase('productos', 'POST', {
+      id: creado.id,
+      codigo: creado.codigo,
+      nombre: creado.nombre,
+      presentacion: creado.presentacion,
+      categoria: creado.categoria,
+      proveedor: creado.proveedor,
+      precio: creado.precio,
+      stock: creado.stock,
+      stock_minimo: creado.stock_minimo,
+      vence: creado.vence,
+      activo: true,
+    })
+
     return res.status(201).json(mapearProducto(creado))
   } catch (err) {
     if (String(err.message).includes('UNIQUE')) {
@@ -116,7 +131,7 @@ router.post('/', (req, res) => {
  * PUT /api/productos/:id
  * Actualiza un producto existente en el inventario
  */
-router.put('/:id', (req, res) => {
+router.put('/:id', async (req, res) => {
   const id = Number(req.params.id)
   if (!Number.isInteger(id) || id <= 0) {
     return res.status(400).json({ error: 'ID de producto inválido.' })
@@ -162,6 +177,22 @@ router.put('/:id', (req, res) => {
     .prepare('SELECT id, codigo, nombre, presentacion, categoria, proveedor, precio, stock, stock_minimo, vence FROM productos WHERE id = ?')
     .get(id)
 
+  await respaldarEnSupabase(
+    'productos',
+    'PATCH',
+    {
+      nombre,
+      presentacion,
+      categoria,
+      proveedor,
+      precio,
+      stock,
+      stock_minimo: stockMinimo,
+      vence,
+    },
+    `id=eq.${id}`
+  )
+
   return res.json(mapearProducto(actualizado))
 })
 
@@ -169,7 +200,7 @@ router.put('/:id', (req, res) => {
  * DELETE /api/productos/:id
  * Realiza baja lógica del producto para conservar integridad en el historial de ventas
  */
-router.delete('/:id', (req, res) => {
+router.delete('/:id', async (req, res) => {
   const id = Number(req.params.id)
   if (!Number.isInteger(id) || id <= 0) {
     return res.status(400).json({ error: 'ID de producto inválido.' })
@@ -182,6 +213,8 @@ router.delete('/:id', (req, res) => {
   if (resultado.changes === 0) {
     return res.status(404).json({ error: 'Producto no encontrado.' })
   }
+
+  await respaldarEnSupabase('productos', 'PATCH', { activo: false }, `id=eq.${id}`)
 
   return res.json({ ok: true, id })
 })

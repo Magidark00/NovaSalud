@@ -1,5 +1,6 @@
 import { Router } from 'express'
 import db from '../db.js'
+import { respaldarEnSupabase } from '../supabase.js'
 import { sanitizarTexto, verificarToken } from '../middleware/auth.js'
 
 const router = Router()
@@ -121,7 +122,7 @@ router.get('/', (_req, res) => {
  * POST /api/reposicion
  * Genera nuevas órdenes de reposición agrupadas por proveedor en una transacción SQLite
  */
-router.post('/', (req, res) => {
+router.post('/', async (req, res) => {
   const grupos = Array.isArray(req.body?.grupos) ? req.body.grupos : []
   if (grupos.length === 0) {
     return res.status(400).json({ error: 'Selecciona al menos un producto para generar la orden.' })
@@ -140,6 +141,7 @@ router.post('/', (req, res) => {
     `)
 
     let ordenesCreadas = 0
+    const respaldos = []
 
     for (const g of grupos) {
       const proveedor = sanitizarTexto(g.proveedor || 'Proveedor general', 80)
@@ -150,16 +152,37 @@ router.post('/', (req, res) => {
       const infoOrden = insertOrden.run(codigo, proveedor, req.usuario.id)
       ordenesCreadas += 1
 
+      respaldos.push(
+        respaldarEnSupabase('ordenes_reposicion', 'POST', {
+          id: Number(infoOrden.lastInsertRowid),
+          codigo,
+          proveedor,
+          estado: 'pendiente',
+          usuario_id: req.usuario.id,
+        })
+      )
+
       for (const item of items) {
         const productoId = Number.isInteger(Number(item.id)) ? Number(item.id) : null
         const nombre = sanitizarTexto(item.nombre, 120)
         const cantidad = Math.max(1, Math.min(999, Number(item.cantidad) || 1))
         if (!nombre) continue
-        insertDetalle.run(infoOrden.lastInsertRowid, productoId, nombre, cantidad)
+        const infoDet = insertDetalle.run(infoOrden.lastInsertRowid, productoId, nombre, cantidad)
+        respaldos.push(
+          respaldarEnSupabase('detalle_reposicion', 'POST', {
+            id: Number(infoDet.lastInsertRowid),
+            orden_id: Number(infoOrden.lastInsertRowid),
+            producto_id: productoId,
+            producto_nombre: nombre,
+            cantidad,
+          })
+        )
       }
     }
 
     db.exec('COMMIT;')
+
+    await Promise.all(respaldos)
 
     return res.status(201).json({
       ok: true,
@@ -180,7 +203,7 @@ router.post('/', (req, res) => {
  * PUT /api/reposicion/:ordenId/recibir
  * Marca una orden pendiente como recibida e incrementa automáticamente el stock en el inventario
  */
-router.put('/:ordenId/recibir', (req, res) => {
+router.put('/:ordenId/recibir', async (req, res) => {
   const ordenId = Number(req.params.ordenId)
   if (!Number.isInteger(ordenId) || ordenId <= 0) {
     return res.status(400).json({ error: 'ID de orden inválido.' })
@@ -222,6 +245,8 @@ router.put('/:ordenId/recibir', (req, res) => {
     db.prepare("UPDATE ordenes_reposicion SET estado = 'recibida' WHERE id = ?").run(ordenId)
 
     db.exec('COMMIT;')
+
+    await respaldarEnSupabase('ordenes_reposicion', 'PATCH', { estado: 'recibida' }, `id=eq.${ordenId}`)
 
     return res.json({
       ok: true,

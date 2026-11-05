@@ -1,6 +1,7 @@
 import express from 'express'
 import cors from 'cors'
 import { inicializarBaseDeDatos } from './db.js'
+import { sincronizarDesdeSupabase, supabaseActivo } from './supabase.js'
 import { cabecerasSeguridad } from './middleware/auth.js'
 import authRoutes from './routes/auth.js'
 import productosRoutes from './routes/productos.js'
@@ -18,6 +19,14 @@ app.use(cabecerasSeguridad)
 app.use(cors())
 app.use(express.json({ limit: '100kb' }))
 
+// Si SUPABASE_URL y SUPABASE_KEY están configuradas, sincroniza el estado al iniciar
+app.use(async (_req, _res, next) => {
+  if (supabaseActivo) {
+    await sincronizarDesdeSupabase()
+  }
+  next()
+})
+
 // Rutas de la API REST (Todos los módulos de Nova Salud)
 app.use('/api/auth', authRoutes)
 app.use('/api/productos', productosRoutes)
@@ -32,7 +41,9 @@ app.get('/api/health', (_req, res) => {
     status: 'ok',
     sistema: 'Nova Salud API',
     modulosActivos: ['auth', 'dashboard', 'ventas', 'inventario', 'clientes', 'reposicion'],
-    baseDeDatos: 'SQLite (WAL Mode + Prepared Statements)',
+    baseDeDatos: supabaseActivo
+      ? 'Supabase PostgreSQL + SQLite Cache Activo'
+      : 'SQLite (WAL Mode + Prepared Statements)',
   })
 })
 

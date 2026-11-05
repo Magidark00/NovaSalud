@@ -1,5 +1,6 @@
 import { Router } from 'express'
 import db from '../db.js'
+import { respaldarEnSupabase } from '../supabase.js'
 import { sanitizarTexto, verificarToken } from '../middleware/auth.js'
 
 const router = Router()
@@ -62,7 +63,7 @@ router.get('/', (_req, res) => {
  * 3. Registra la cabecera y el detalle de la boleta
  * 4. Actualiza estadísticas del cliente y ventas semanales del dashboard
  */
-router.post('/', (req, res) => {
+router.post('/', async (req, res) => {
   const items = Array.isArray(req.body?.items) ? req.body.items : []
   const clienteNombre = sanitizarTexto(req.body?.cliente || 'Cliente general', 100) || 'Cliente general'
   const metodoRaw = sanitizarTexto(req.body?.metodoPago || 'efectivo', 30).toLowerCase()
@@ -116,6 +117,7 @@ router.post('/', (req, res) => {
         cantidad,
         precio: prod.precio,
         importe,
+        nuevoStock: prod.stock - cantidad,
       })
 
       updateStock.run(cantidad, prod.id)
@@ -185,6 +187,28 @@ router.post('/', (req, res) => {
     db.prepare('UPDATE ventas_semanales_resumen SET ventas = ROUND(ventas + ?, 2) WHERE dia = ?').run(total, diaHoy)
 
     db.exec('COMMIT;')
+
+    // Respaldar en Supabase si está activo
+    await Promise.all([
+      respaldarEnSupabase('ventas', 'POST', {
+        id: Number(infoVenta.lastInsertRowid),
+        numero_boleta: numeroBoleta,
+        codigo_boleta: codigoBoleta,
+        cliente_id: clienteId,
+        cliente_nombre: clienteNombre,
+        usuario_id: req.usuario.id,
+        metodo_pago: metodoPago,
+        subtotal,
+        igv,
+        descuento: 0,
+        total,
+        recibido,
+        vuelto,
+      }),
+      ...lineasProcesadas.map((l) =>
+        respaldarEnSupabase('productos', 'PATCH', { stock: l.nuevoStock }, `id=eq.${l.productoId}`)
+      ),
+    ])
 
     return res.status(201).json({
       venta: {

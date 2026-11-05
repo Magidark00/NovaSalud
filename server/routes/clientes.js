@@ -1,5 +1,6 @@
 import { Router } from 'express'
 import db from '../db.js'
+import { respaldarEnSupabase } from '../supabase.js'
 import { sanitizarTexto, verificarToken } from '../middleware/auth.js'
 
 const router = Router()
@@ -94,7 +95,7 @@ router.get('/', (req, res) => {
  * POST /api/clientes
  * Registra un nuevo cliente con validación de DNI y consultas parametrizadas
  */
-router.post('/', (req, res) => {
+router.post('/', async (req, res) => {
   const nombre = sanitizarTexto(req.body?.nombre, 120)
   const dni = sanitizarTexto(req.body?.dni, 15)
   const telefono = sanitizarTexto(req.body?.telefono, 30)
@@ -115,6 +116,17 @@ router.post('/', (req, res) => {
       .prepare('SELECT id, dni, nombre, telefono, compras, ultima_compra, total_gastado, ultimas_compras_json FROM clientes WHERE id = ?')
       .get(info.lastInsertRowid)
 
+    await respaldarEnSupabase('clientes', 'POST', {
+      id: fila.id,
+      dni: fila.dni,
+      nombre: fila.nombre,
+      telefono: fila.telefono,
+      compras: 0,
+      ultima_compra: '',
+      total_gastado: 0,
+      ultimas_compras_json: [],
+    })
+
     const stmtVentasCliente = db.prepare('SELECT codigo_boleta AS codigo, fecha, total, metodo_pago AS pago FROM ventas WHERE cliente_id = ?')
     return res.status(201).json(construirClienteConCompras(fila, stmtVentasCliente))
   } catch (err) {
@@ -129,7 +141,7 @@ router.post('/', (req, res) => {
  * PUT /api/clientes/:id
  * Actualiza los datos de un cliente existente
  */
-router.put('/:id', (req, res) => {
+router.put('/:id', async (req, res) => {
   const id = Number(req.params.id)
   if (!Number.isInteger(id) || id <= 0) {
     return res.status(400).json({ error: 'ID de cliente inválido.' })
@@ -151,6 +163,8 @@ router.put('/:id', (req, res) => {
   try {
     db.prepare('UPDATE clientes SET nombre = ?, dni = ?, telefono = ? WHERE id = ?').run(nombre, dni, telefono, id)
     db.prepare('UPDATE ventas SET cliente_nombre = ? WHERE cliente_id = ?').run(nombre, id)
+
+    await respaldarEnSupabase('clientes', 'PATCH', { nombre, dni, telefono }, `id=eq.${id}`)
 
     const fila = db
       .prepare('SELECT id, dni, nombre, telefono, compras, ultima_compra, total_gastado, ultimas_compras_json FROM clientes WHERE id = ?')
@@ -176,7 +190,7 @@ router.put('/:id', (req, res) => {
  * DELETE /api/clientes/:id
  * Elimina un cliente conservando sus ventas registradas en la tabla ventas
  */
-router.delete('/:id', (req, res) => {
+router.delete('/:id', async (req, res) => {
   const id = Number(req.params.id)
   if (!Number.isInteger(id) || id <= 0) {
     return res.status(400).json({ error: 'ID de cliente inválido.' })
@@ -186,6 +200,8 @@ router.delete('/:id', (req, res) => {
   if (resultado.changes === 0) {
     return res.status(404).json({ error: 'Cliente no encontrado.' })
   }
+
+  await respaldarEnSupabase('clientes', 'DELETE', null, `id=eq.${id}`)
 
   return res.json({ ok: true, id })
 })
