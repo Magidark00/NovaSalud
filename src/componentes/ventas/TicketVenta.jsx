@@ -7,7 +7,13 @@ import { formatSoles } from '../../utils/formato'
 import './TicketVenta.css'
 
 // `venta` es lo que devuelve el hook useVenta()
-export default function TicketVenta({ venta, boleta, onCobrar }) {
+export default function TicketVenta({
+  venta,
+  boleta,
+  clientes = CLIENTES,
+  procesando = false,
+  onCobrar,
+}) {
   const {
     lineas,
     unidades,
@@ -43,7 +49,7 @@ export default function TicketVenta({ venta, boleta, onCobrar }) {
       <div className="select">
         <User size={16} aria-hidden="true" />
         <select id="cliente" value={cliente} onChange={(e) => setCliente(e.target.value)}>
-          {CLIENTES.map((c) => (
+          {clientes.map((c) => (
             <option key={c} value={c}>{c}</option>
           ))}
         </select>
@@ -118,16 +124,21 @@ export default function TicketVenta({ venta, boleta, onCobrar }) {
         </div>
       )}
 
-      <button type="button" className="btn btn--primary btn--block" disabled={!puedeCobrar} onClick={onCobrar}>
+      <button
+        type="button"
+        className="btn btn--primary btn--block"
+        disabled={!puedeCobrar || procesando}
+        onClick={onCobrar}
+      >
         <Check size={18} aria-hidden="true" />
-        Cobrar {formatSoles(totales.total)}
+        {procesando ? 'Procesando...' : `Cobrar ${formatSoles(totales.total)}`}
       </button>
 
       {hayProductos && esEfectivo && !puedeCobrar && (
         <p className="ticket__hint">El efectivo recibido debe cubrir el total.</p>
       )}
 
-      <button type="button" className="btn btn--outline btn--block" disabled={!hayProductos} onClick={reiniciar}>
+      <button type="button" className="btn btn--outline btn--block" disabled={!hayProductos || procesando} onClick={reiniciar}>
         Cancelar venta
       </button>
 

@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import { History } from 'lucide-react'
 import PageHeader from '../componentes/common/PageHeader'
 import Toast from '../componentes/common/Toast'
@@ -8,20 +9,50 @@ import ProductCard from '../componentes/ventas/ProductCard'
 import TicketVenta from '../componentes/ventas/TicketVenta'
 import { useInventario } from '../context/InventarioContext'
 import { useVenta } from '../hooks/useVenta'
-import { CATEGORIAS } from '../data/productos'
+import { CATEGORIAS, CLIENTES } from '../data/productos'
+import { apiObtenerVentas, apiRegistrarVenta } from '../services/api'
 import { formatBoleta, formatSoles, normalizar } from '../utils/formato'
 import './Ventas.css'
 import Dialogo from '../componentes/common/Dialogo'
 
 export default function Ventas() {
-  const { productos, descontarStock } = useInventario()
+  const { productos, descontarStock, recargarProductos } = useInventario()
+  const [parametrosBusqueda] = useSearchParams()
+  const clienteQuery = parametrosBusqueda.get('cliente')
   const [busqueda, setBusqueda] = useState('')
   const [categoria, setCategoria] = useState('Todos')
   const [numeroBoleta, setNumeroBoleta] = useState(461)
+  const [listaClientes, setListaClientes] = useState(CLIENTES)
   const [aviso, setAviso] = useState('')
   const [historial, setHistorial] = useState([])
   const [verHistorial, setVerHistorial] = useState(false)
+  const [procesando, setProcesando] = useState(false)
   const venta = useVenta(productos)
+  const { setCliente } = venta
+
+  useEffect(() => {
+    let activo = true
+    apiObtenerVentas()
+      .then((datos) => {
+        if (!activo) return
+        if (datos.siguienteBoleta) setNumeroBoleta(datos.siguienteBoleta)
+        if (Array.isArray(datos.historial)) setHistorial(datos.historial)
+        if (Array.isArray(datos.clientes) && datos.clientes.length > 0) {
+          const clientesDisponibles =
+            clienteQuery && !datos.clientes.includes(clienteQuery)
+              ? [...datos.clientes, clienteQuery]
+              : datos.clientes
+          setListaClientes(clientesDisponibles)
+        }
+        if (clienteQuery) {
+          setCliente(clienteQuery)
+        }
+      })
+      .catch(() => {})
+    return () => {
+      activo = false
+    }
+  }, [clienteQuery, setCliente])
 
   // El aviso de "boleta emitida" desaparece solo
   useEffect(() => {
@@ -39,19 +70,36 @@ export default function Ventas() {
     })
   }, [productos, busqueda, categoria])
 
-  function cobrar() {
-    const boleta = formatBoleta(numeroBoleta)
-    descontarStock(venta.lineas) // baja el stock en todo el sistema
-    setAviso(`Boleta ${boleta} emitida por ${formatSoles(venta.totales.total)}`)
-    setHistorial(prev => [{ boleta, fecha: new Date().toLocaleString('es-PE'), lineas: venta.lineas.length, total: venta.totales.total }, ...prev])
-    setNumeroBoleta((n) => n + 1)
-    venta.reiniciar()
+  async function cobrar() {
+    if (procesando) return
+    setProcesando(true)
+    try {
+      const respuesta = await apiRegistrarVenta({
+        items: venta.lineas.map((l) => ({ id: l.id, cantidad: l.cantidad })),
+        cliente: venta.cliente,
+        metodoPago: venta.metodoPago,
+        recibido: venta.recibido,
+      })
+
+      descontarStock(venta.lineas)
+      await recargarProductos()
+
+      const boletaEmitida = respuesta.venta.boleta
+      setAviso(`Boleta ${boletaEmitida} emitida por ${formatSoles(respuesta.venta.total)}`)
+      setHistorial((prev) => [respuesta.venta, ...prev])
+      setNumeroBoleta(respuesta.siguienteBoleta)
+      venta.reiniciar()
+    } catch (err) {
+      setAviso(err.message || 'Error al registrar la venta.')
+    } finally {
+      setProcesando(false)
+    }
   }
 
   return (
     <>
       <PageHeader titulo="Ventas" estado="Caja abierta">
-        <button type="button" className="btn btn--outline" onClick={()=>setVerHistorial(true)}>
+        <button type="button" className="btn btn--outline" onClick={() => setVerHistorial(true)}>
           <History size={18} aria-hidden="true" />
           Historial de ventas
         </button>
@@ -80,11 +128,53 @@ export default function Ventas() {
           </div>
         </section>
 
-        <TicketVenta venta={venta} boleta={formatBoleta(numeroBoleta)} onCobrar={cobrar} />
+        <TicketVenta
+          venta={venta}
+          boleta={formatBoleta(numeroBoleta)}
+          clientes={listaClientes}
+          procesando={procesando}
+          onCobrar={cobrar}
+        />
       </div>
 
       <Toast mensaje={aviso} onClose={() => setAviso('')} />
-      {verHistorial && <Dialogo titulo="Historial de ventas" descripcion="Ventas registradas durante esta sesión." ancho="ancho" onCerrar={()=>setVerHistorial(false)}>{historial.length ? <table className="dialogo__tabla"><thead><tr><th>Boleta</th><th>Fecha</th><th>Productos</th><th>Total</th></tr></thead><tbody>{historial.map(v=><tr key={v.boleta}><td>{v.boleta}</td><td>{v.fecha}</td><td>{v.lineas}</td><td>{formatSoles(v.total)}</td></tr>)}</tbody></table> : <p className="data-table__vacio">Aún no se han registrado ventas en esta sesión.</p>}</Dialogo>}
+      {verHistorial && (
+        <Dialogo
+          titulo="Historial de ventas"
+          descripcion="Ventas registradas y sincronizadas en la base de datos."
+          ancho="ancho"
+          onCerrar={() => setVerHistorial(false)}
+        >
+          {historial.length ? (
+            <table className="dialogo__tabla">
+              <thead>
+                <tr>
+                  <th>Boleta</th>
+                  <th>Cliente</th>
+                  <th>Fecha</th>
+                  <th>Unidades</th>
+                  <th>Pago</th>
+                  <th>Total</th>
+                </tr>
+              </thead>
+              <tbody>
+                {historial.map((v) => (
+                  <tr key={v.boleta}>
+                    <td>{v.boleta}</td>
+                    <td>{v.cliente || 'Cliente general'}</td>
+                    <td>{v.fecha}</td>
+                    <td>{v.lineas}</td>
+                    <td>{v.pago}</td>
+                    <td>{formatSoles(v.total)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          ) : (
+            <p className="data-table__vacio">Aún no se han registrado ventas.</p>
+          )}
+        </Dialogo>
+      )}
     </>
   )
 }

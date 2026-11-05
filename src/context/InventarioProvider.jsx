@@ -1,31 +1,75 @@
-import { useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { InventarioContext } from './InventarioContext'
+import { useAuth } from './AuthContext'
 import { PRODUCTOS } from '../data/productos'
+import {
+  apiActualizarProducto,
+  apiCrearProducto,
+  apiEliminarProducto,
+  apiObtenerProductos,
+} from '../services/api'
 
-// Estado compartido de productos.
-// Cuando exista el backend, estas funciones llamarán a la API.
 export default function InventarioProvider({ children }) {
+  const { autenticado } = useAuth()
   const [productos, setProductos] = useState(PRODUCTOS)
 
-  // lineas: [{ id, cantidad }] (lo que devuelve useVenta)
+  const recargarProductos = useCallback(async () => {
+    if (!autenticado) return
+    try {
+      const lista = await apiObtenerProductos()
+      setProductos(lista)
+    } catch {
+      // Mantiene datos actuales si ocurre error temporal
+    }
+  }, [autenticado])
+
+  useEffect(() => {
+    if (!autenticado) return undefined
+    let activo = true
+    apiObtenerProductos()
+      .then((lista) => {
+        if (activo) setProductos(lista)
+      })
+      .catch(() => {})
+    return () => {
+      activo = false
+    }
+  }, [autenticado])
+
+  // lineas: [{ id, cantidad }]
   function descontarStock(lineas) {
     setProductos((prev) =>
       prev.map((p) => {
         const linea = lineas.find((l) => l.id === p.id)
-        return linea ? { ...p, stock: p.stock - linea.cantidad } : p
-      }),
+        return linea ? { ...p, stock: Math.max(0, p.stock - linea.cantidad) } : p
+      })
     )
   }
 
-  function eliminarProducto(id) {
+  async function eliminarProducto(id) {
+    await apiEliminarProducto(id)
     setProductos((prev) => prev.filter((p) => p.id !== id))
   }
 
-  function guardarProducto(producto) {
-    setProductos((prev) => producto.id ? prev.map((p) => p.id === producto.id ? producto : p) : [...prev, { ...producto, id: Math.max(0, ...prev.map((p) => Number(p.id) || 0)) + 1 }])
+  async function guardarProducto(producto) {
+    if (producto.id) {
+      const actualizado = await apiActualizarProducto(producto.id, producto)
+      setProductos((prev) => prev.map((p) => (p.id === actualizado.id ? actualizado : p)))
+      return actualizado
+    } else {
+      const creado = await apiCrearProducto(producto)
+      setProductos((prev) => [...prev, creado])
+      return creado
+    }
   }
 
-  const valor = { productos, descontarStock, eliminarProducto, guardarProducto }
+  const valor = {
+    productos,
+    recargarProductos,
+    descontarStock,
+    eliminarProducto,
+    guardarProducto,
+  }
 
   return <InventarioContext.Provider value={valor}>{children}</InventarioContext.Provider>
 }

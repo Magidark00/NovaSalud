@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { CircleX, Plus, ShoppingCart, TriangleAlert } from 'lucide-react'
 import PageHeader from '../componentes/common/PageHeader'
@@ -11,10 +12,34 @@ import {
   ULTIMAS_VENTAS,
   VENTAS_SEMANA,
 } from '../data/dashboard'
+import { apiObtenerDashboard } from '../services/api'
 import { formatSoles } from '../utils/formato'
 import './Dashboard.css'
 
 export default function Dashboard() {
+  const [datos, setDatos] = useState({
+    resumen: RESUMEN,
+    ventasSemana: VENTAS_SEMANA,
+    alertasReposicion: ALERTAS_REPOSICION,
+    ultimasVentas: ULTIMAS_VENTAS,
+  })
+
+  useEffect(() => {
+    let activo = true
+    apiObtenerDashboard()
+      .then((respuesta) => {
+        if (activo) setDatos(respuesta)
+      })
+      .catch(() => {
+        // Conserva datos de respaldo si hay corte temporal
+      })
+    return () => {
+      activo = false
+    }
+  }, [])
+
+  const { resumen, ventasSemana, alertasReposicion, ultimasVentas } = datos
+
   return (
     <>
       <PageHeader titulo="Dashboard" estado="En vivo">
@@ -29,19 +54,19 @@ export default function Dashboard() {
           icono={ShoppingCart}
           tono="teal"
           etiqueta="Ventas de hoy"
-          valor={formatSoles(RESUMEN.ventasHoy)}
-          nota={`▲ ${RESUMEN.variacion}% vs ayer`}
+          valor={formatSoles(resumen.ventasHoy)}
+          nota={`▲ ${resumen.variacion}% vs ayer`}
         />
-        <StatCard icono={TriangleAlert} tono="warning" etiqueta="Stock bajo" valor={RESUMEN.stockBajo} />
-        <StatCard icono={TriangleAlert} tono="warning" etiqueta="Por vencer" valor={RESUMEN.porVencer} />
-        <StatCard icono={CircleX} tono="danger" etiqueta="Agotados" valor={RESUMEN.agotados} />
+        <StatCard icono={TriangleAlert} tono="warning" etiqueta="Stock bajo" valor={resumen.stockBajo} />
+        <StatCard icono={TriangleAlert} tono="warning" etiqueta="Por vencer" valor={resumen.porVencer} />
+        <StatCard icono={CircleX} tono="danger" etiqueta="Agotados" valor={resumen.agotados} />
       </section>
 
-      <SalesChart datos={VENTAS_SEMANA} />
+      <SalesChart datos={ventasSemana} />
 
       <div className="dashboard__bottom">
-        <AlertasReposicion alertas={ALERTAS_REPOSICION} />
-        <UltimasVentas ventas={ULTIMAS_VENTAS} />
+        <AlertasReposicion alertas={alertasReposicion} />
+        <UltimasVentas ventas={ultimasVentas} />
       </div>
     </>
   )

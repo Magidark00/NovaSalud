@@ -35,8 +35,10 @@ export default function DetalleCliente({ cliente }) {
         </div>
       </dl>
 
-      {/* TODO: abrir Ventas con este cliente ya seleccionado */}
-      <Link to="/ventas" className="btn btn--primary btn--block">
+      <Link
+        to={`/ventas?cliente=${encodeURIComponent(cliente.nombre)}`}
+        className="btn btn--primary btn--block"
+      >
         <Plus size={18} aria-hidden="true" />
         Nueva venta
       </Link>
