@@ -11,6 +11,7 @@ import { useVenta } from '../hooks/useVenta'
 import { CATEGORIAS } from '../data/productos'
 import { formatBoleta, formatSoles, normalizar } from '../utils/formato'
 import './Ventas.css'
+import Dialogo from '../componentes/common/Dialogo'
 
 export default function Ventas() {
   const { productos, descontarStock } = useInventario()
@@ -18,6 +19,8 @@ export default function Ventas() {
   const [categoria, setCategoria] = useState('Todos')
   const [numeroBoleta, setNumeroBoleta] = useState(461)
   const [aviso, setAviso] = useState('')
+  const [historial, setHistorial] = useState([])
+  const [verHistorial, setVerHistorial] = useState(false)
   const venta = useVenta(productos)
 
   // El aviso de "boleta emitida" desaparece solo
@@ -36,18 +39,11 @@ export default function Ventas() {
     })
   }, [productos, busqueda, categoria])
 
-  // Enter en el buscador: si el texto es un código exacto, agrega el producto
-  function agregarPorCodigo() {
-    const producto = productos.find((p) => p.codigo === busqueda.trim())
-    if (!producto) return
-    venta.agregar(producto.id)
-    setBusqueda('')
-  }
-
   function cobrar() {
     const boleta = formatBoleta(numeroBoleta)
     descontarStock(venta.lineas) // baja el stock en todo el sistema
     setAviso(`Boleta ${boleta} emitida por ${formatSoles(venta.totales.total)}`)
+    setHistorial(prev => [{ boleta, fecha: new Date().toLocaleString('es-PE'), lineas: venta.lineas.length, total: venta.totales.total }, ...prev])
     setNumeroBoleta((n) => n + 1)
     venta.reiniciar()
   }
@@ -55,8 +51,7 @@ export default function Ventas() {
   return (
     <>
       <PageHeader titulo="Ventas" estado="Caja abierta">
-        {/* TODO: conectar con la pantalla de historial cuando exista */}
-        <button type="button" className="btn btn--outline">
+        <button type="button" className="btn btn--outline" onClick={()=>setVerHistorial(true)}>
           <History size={18} aria-hidden="true" />
           Historial de ventas
         </button>
@@ -64,7 +59,7 @@ export default function Ventas() {
 
       <div className="ventas">
         <section className="ventas__catalogo" aria-label="Productos">
-          <BuscadorProducto valor={busqueda} onChange={setBusqueda} onEnter={agregarPorCodigo} />
+          <BuscadorProducto valor={busqueda} onChange={setBusqueda} />
           <FiltroCategorias categorias={CATEGORIAS} activa={categoria} onChange={setCategoria} />
 
           {visibles.length > 0 ? (
@@ -88,7 +83,8 @@ export default function Ventas() {
         <TicketVenta venta={venta} boleta={formatBoleta(numeroBoleta)} onCobrar={cobrar} />
       </div>
 
-      <Toast mensaje={aviso} />
+      <Toast mensaje={aviso} onClose={() => setAviso('')} />
+      {verHistorial && <Dialogo titulo="Historial de ventas" descripcion="Ventas registradas durante esta sesión." ancho="ancho" onCerrar={()=>setVerHistorial(false)}>{historial.length ? <table className="dialogo__tabla"><thead><tr><th>Boleta</th><th>Fecha</th><th>Productos</th><th>Total</th></tr></thead><tbody>{historial.map(v=><tr key={v.boleta}><td>{v.boleta}</td><td>{v.fecha}</td><td>{v.lineas}</td><td>{formatSoles(v.total)}</td></tr>)}</tbody></table> : <p className="data-table__vacio">Aún no se han registrado ventas en esta sesión.</p>}</Dialogo>}
     </>
   )
 }

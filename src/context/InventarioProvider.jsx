@@ -21,7 +21,11 @@ export default function InventarioProvider({ children }) {
     setProductos((prev) => prev.filter((p) => p.id !== id))
   }
 
-  const valor = { productos, descontarStock, eliminarProducto }
+  function guardarProducto(producto) {
+    setProductos((prev) => producto.id ? prev.map((p) => p.id === producto.id ? producto : p) : [...prev, { ...producto, id: Math.max(0, ...prev.map((p) => Number(p.id) || 0)) + 1 }])
+  }
+
+  const valor = { productos, descontarStock, eliminarProducto, guardarProducto }
 
   return <InventarioContext.Provider value={valor}>{children}</InventarioContext.Provider>
 }

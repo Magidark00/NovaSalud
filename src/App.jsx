@@ -5,7 +5,6 @@ import Dashboard from './pages/Dashboard'
 import Ventas from './pages/Ventas'
 import Inventario from './pages/Inventario'
 import Clientes from './pages/Clientes'
-import EnConstruccion from './pages/EnConstruccion'
 import Reposicion from './pages/Reposicion'
 
 export default function App() {

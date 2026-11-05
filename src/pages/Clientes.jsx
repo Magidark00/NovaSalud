@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react'
-import { Download, Plus, ShoppingBag, UserPlus, Users } from 'lucide-react'
+import { useSearchParams } from 'react-router-dom'
+import { Download, Plus, ShoppingBag, UserPlus, Users, UserRoundPen, Trash2 } from 'lucide-react'
 import PageHeader from '../componentes/common/PageHeader'
 import StatCard from '../componentes/common/StatCard'
 import StatsGrid from '../componentes/common/StatsGrid'
@@ -10,14 +11,22 @@ import DetalleCliente from '../componentes/clientes/DetalleCliente'
 import { CLIENTES_EJEMPLO, RESUMEN_CLIENTES } from '../data/clientes'
 import { normalizar } from '../utils/formato'
 import './Clientes.css'
+import Dialogo from '../componentes/common/Dialogo'
+import Toast from '../componentes/common/Toast'
+import { exportarCsv } from '../utils/exportarCsv'
 
 const POR_PAGINA = 4
 
 export default function Clientes() {
+  const [parametrosBusqueda, setParametrosBusqueda] = useSearchParams()
   const [clientes, setClientes] = useState(CLIENTES_EJEMPLO)
-  const [busqueda, setBusqueda] = useState('')
+  const busqueda = parametrosBusqueda.get('busqueda') ?? ''
+  const setBusqueda = (valor) => setParametrosBusqueda((prev) => { const siguiente = new URLSearchParams(prev); if (valor) siguiente.set('busqueda', valor); else siguiente.delete('busqueda'); return siguiente }, { replace: true })
   const [pagina, setPagina] = useState(1)
   const [seleccionadoId, setSeleccionadoId] = useState(CLIENTES_EJEMPLO[0].id)
+  const [formulario, setFormulario] = useState(null)
+  const [confirmar, setConfirmar] = useState(null)
+  const [aviso, setAviso] = useState('')
 
   const filtrados = useMemo(() => {
     const texto = busqueda.trim()
@@ -40,25 +49,33 @@ export default function Clientes() {
     setPagina(1)
   }
 
-  function eliminar(cliente) {
-    if (window.confirm(`¿Eliminar a "${cliente.nombre}" de la lista de clientes?`)) {
-      setClientes((prev) => prev.filter((c) => c.id !== cliente.id))
-    }
+  function eliminar(cliente) { setConfirmar(cliente) }
+  function editar(cliente) {
+    const partes = cliente.nombre.trim().split(/\s+/)
+    setFormulario({ ...cliente, nombres: partes.shift() ?? '', apellidos: partes.join(' ') })
   }
-
-  // TODO: abrir el formulario de edición
-  function editar() {}
+  function guardar(e) {
+    e.preventDefault()
+    const datos = new FormData(e.currentTarget)
+    const cambios = Object.fromEntries(datos.entries())
+    if (formulario.id) {
+      setClientes(prev => prev.map(c => c.id === formulario.id ? { ...c, nombre: `${cambios.nombres} ${cambios.apellidos}`.trim(), dni: cambios.dni, telefono: cambios.telefono } : c))
+      setAviso('Cliente actualizado.')
+    } else {
+      const nuevo = { nombre: `${cambios.nombres} ${cambios.apellidos}`.trim(), dni: cambios.dni, telefono: cambios.telefono, id: Math.max(0,...clientes.map(c=>c.id))+1, compras: 0, ultimaCompra: '', totalGastado: 0, ultimasCompras: [] }
+      setClientes(prev => [nuevo, ...prev]); setSeleccionadoId(nuevo.id); setAviso('Cliente registrado.')
+    }
+    setFormulario(null)
+  }
 
   return (
     <>
       <PageHeader titulo="Clientes" estado={`${clientes.length} registrados`}>
-        {/* TODO: exportar la lista a CSV / Excel */}
-        <button type="button" className="btn btn--outline">
+        <button type="button" className="btn btn--outline" onClick={() => exportarCsv('clientes-novasalud.csv',['Nombre','DNI','Teléfono','Compras','Última compra','Total gastado'],clientes.map(c=>[c.nombre,c.dni,c.telefono,c.compras,c.ultimaCompra,c.totalGastado]))}>
           <Download size={18} aria-hidden="true" />
           Exportar
         </button>
-        {/* TODO: abrir el formulario de nuevo cliente */}
-        <button type="button" className="btn btn--primary">
+        <button type="button" className="btn btn--primary" onClick={() => setFormulario({nombres:'',apellidos:'',dni:'',telefono:''})}>
           <Plus size={18} aria-hidden="true" />
           Nuevo cliente
         </button>
@@ -100,6 +117,9 @@ export default function Clientes() {
 
         <DetalleCliente cliente={seleccionado} />
       </div>
+      {formulario && <Dialogo titulo={formulario.id?'Editar cliente':'Nuevo cliente'} descripcion={formulario.id?'Mantén los datos de contacto de tu cliente al día.':'Registra los datos de contacto de tu cliente.'} icono={UserRoundPen} onCerrar={()=>setFormulario(null)}><form className="dialogo__form" onSubmit={guardar}><div className="dialogo__grid"><label className="dialogo__campo">Nombres *<input name="nombres" required value={formulario.nombres ?? ''} onChange={e=>setFormulario(p=>({...p,nombres:e.target.value}))}/></label><label className="dialogo__campo">Apellidos *<input name="apellidos" required value={formulario.apellidos ?? ''} onChange={e=>setFormulario(p=>({...p,apellidos:e.target.value}))}/></label></div><label className="dialogo__campo">DNI *<input name="dni" required inputMode="numeric" pattern="[0-9]{8}" title="Ingresa un DNI de 8 dígitos" value={formulario.dni} onChange={e=>setFormulario(p=>({...p,dni:e.target.value}))}/></label><p className="dialogo__ayuda">Ingresa los 8 dígitos del documento.</p><label className="dialogo__campo">Teléfono *<input name="telefono" required value={formulario.telefono} onChange={e=>setFormulario(p=>({...p,telefono:e.target.value}))}/></label><p className="dialogo__ayuda">* Campos obligatorios.</p>{formulario.id && <div className="dialogo__aviso dialogo__aviso--info">Su historial de compras no se modificará.</div>}<div className="dialogo__acciones"><button type="button" className="btn btn--outline" onClick={()=>setFormulario(null)}>Cancelar</button><button className="btn btn--primary">{formulario.id?'Guardar cambios':'Guardar cliente'}</button></div></form></Dialogo>}
+      {confirmar && <Dialogo titulo="¿Eliminar este cliente?" descripcion="El registro dejará de aparecer en la lista de clientes." icono={Trash2} tono="danger" onCerrar={()=>setConfirmar(null)}><div className="dialogo__form"><div className="dialogo__resumen"><small>Cliente</small><strong>{confirmar.nombre}</strong><p>DNI: {confirmar.dni} · Teléfono: {confirmar.telefono}</p><p>Compras registradas: {confirmar.compras}</p></div><div className="dialogo__aviso"><strong>Esta acción no se puede deshacer.</strong><br/>El historial de compras existente se conservará.</div><div className="dialogo__acciones"><button className="btn btn--outline" onClick={()=>setConfirmar(null)}>Cancelar</button><button className="btn btn--danger" onClick={()=>{setClientes(prev=>prev.filter(c=>c.id!==confirmar.id));if(seleccionadoId===confirmar.id)setSeleccionadoId(null);setConfirmar(null);setAviso('Cliente eliminado.')}}>Sí, eliminar cliente</button></div></div></Dialogo>}
+      <Toast mensaje={aviso} onClose={() => setAviso('')} />
     </>
   )
 }

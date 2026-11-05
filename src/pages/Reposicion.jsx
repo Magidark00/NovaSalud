@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react'
-import { CircleX, ClipboardList, Plus, TriangleAlert } from 'lucide-react'
+import { CircleX, ClipboardList, TriangleAlert } from 'lucide-react'
 import PageHeader from '../componentes/common/PageHeader'
 import StatCard from '../componentes/common/StatCard'
 import StatsGrid from '../componentes/common/StatsGrid'
@@ -15,6 +15,7 @@ import {
 } from '../data/reposicion'
 import '../componentes/reposicion/Reposicion.css'
 import './Reposicion.css'
+import Dialogo from '../componentes/common/Dialogo'
 
 const POR_PAGINA = 4
 
@@ -31,6 +32,7 @@ export default function Reposicion() {
   const [recientes, setRecientes] = useState(REPOSICIONES_RECIENTES)
   const [pendientes, setPendientes] = useState(RESUMEN_REPOSICION.pedidosPendientes)
   const [aviso, setAviso] = useState('')
+  const [verHistorial, setVerHistorial] = useState(false)
 
   const filtrados = useMemo(
     () => (filtro === 'todos' ? PRODUCTOS_REPONER : PRODUCTOS_REPONER.filter((p) => p.estado === filtro)),
@@ -114,14 +116,8 @@ export default function Reposicion() {
   return (
     <>
       <PageHeader titulo="Reposición" estado={`${porReponer} por reponer`}>
-        {/* TODO: abrir historial de reposiciones */}
-        <button type="button" className="btn btn--outline">
+        <button type="button" className="btn btn--outline" onClick={()=>setVerHistorial(true)}>
           Historial
-        </button>
-        {/* TODO: formulario de nueva reposición manual */}
-        <button type="button" className="btn btn--primary">
-          <Plus size={18} aria-hidden="true" />
-          Nueva reposición
         </button>
       </PageHeader>
 
@@ -177,6 +173,7 @@ export default function Reposicion() {
           <RecientesReposicion reposiciones={recientes} />
         </div>
       </div>
+      {verHistorial && <Dialogo titulo="Historial de reposiciones" descripcion="Órdenes recientes y su estado." ancho="ancho" onCerrar={()=>setVerHistorial(false)}><table className="dialogo__tabla"><thead><tr><th>Fecha</th><th>Producto</th><th>Cantidad</th><th>Estado</th></tr></thead><tbody>{recientes.map(r=><tr key={r.id}><td>{r.fecha}</td><td>{r.producto}</td><td>{r.cantidad}</td><td>{r.estado==='recibida'?'Recibida':'Pendiente'}</td></tr>)}</tbody></table></Dialogo>}
     </>
   )
 }

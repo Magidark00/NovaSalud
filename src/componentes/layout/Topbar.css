@@ -9,6 +9,11 @@
   border-bottom: 1px solid var(--line);
 }
 
+.topbar__search-wrap{position:relative;width:min(446px,100%)}
+.topbar__search-wrap .topbar__search{width:100%}
+.topbar__popover,.topbar__avisos{position:absolute;z-index:20;top:calc(100% + 8px);width:min(360px,calc(100vw - 32px));padding:8px;background:var(--card);border:1px solid var(--line);border-radius:10px;box-shadow:0 10px 28px #1f293720}
+.topbar__popover{left:0}.topbar__popover button,.topbar__avisos button{width:100%;display:grid;gap:3px;padding:10px;text-align:left;border:0;border-radius:7px;background:transparent}.topbar__popover button:hover,.topbar__avisos button:hover{background:#faf3ee}.topbar__popover small,.topbar__avisos small{font-size:12px;color:var(--muted)}.topbar__popover p,.topbar__avisos p{padding:10px;color:var(--muted);font-size:13px}.topbar__avisos{right:95px;top:56px}.topbar__avisos>strong{display:block;padding:8px 10px;font-size:14px}.topbar__user{position:relative}
+
 .topbar__search {
   display: flex;
   align-items: center;
