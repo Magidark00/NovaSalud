@@ -23,3 +23,15 @@
     grid-template-columns: minmax(0, 1fr);
   }
 }
+
+@media (max-width: 480px) {
+  .dashboard__stats {
+    gap: 10px;
+    margin-bottom: 14px;
+  }
+
+  .dashboard__bottom {
+    gap: 14px;
+    margin-top: 14px;
+  }
+}

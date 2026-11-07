@@ -62,3 +62,19 @@
     overflow-x: auto;
   }
 }
+
+@media (max-width: 600px) {
+  .ventas-filtros {
+    gap: 9px;
+  }
+
+  .ventas-filtros__tipos {
+    width: 100%;
+  }
+
+  .ventas-filtros__chip {
+    flex: 0 0 auto;
+    padding: 0 10px;
+    font-size: 12px;
+  }
+}

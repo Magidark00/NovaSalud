@@ -163,3 +163,43 @@
     display: none;
   }
 }
+
+@media (max-width: 600px) {
+  .topbar {
+    position: relative;
+    flex-wrap: wrap;
+    gap: 8px;
+    height: auto;
+    min-height: 60px;
+    padding: 10px 14px;
+  }
+
+  .topbar__search-wrap {
+    flex: 1 1 100%;
+    order: 1;
+  }
+
+  .topbar__user {
+    flex: 1 1 100%;
+    justify-content: flex-end;
+    order: 2;
+    gap: 8px;
+  }
+
+  .topbar__search {
+    height: 40px;
+  }
+
+  .topbar__pos-btn {
+    width: 38px;
+    padding: 0;
+  }
+
+  .topbar__popover {
+    width: 100%;
+  }
+
+  .topbar__avisos {
+    right: 8px;
+  }
+}

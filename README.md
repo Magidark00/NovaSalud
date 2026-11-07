@@ -1,255 +1,131 @@
 # Nova Salud
 
-Sistema web para gestionar de forma centralizada el **inventario, las ventas y la atención al cliente** de una botica. Está pensado como herramienta interna para los trabajadores del local: el cliente nunca entra al sistema, quien lo usa es la persona que atiende en el mostrador.
+Sistema web de gestión para la botica **Nova Salud**. Permite administrar las ventas del mostrador, inventario, clientes y órdenes de reposición desde una sola aplicación.
 
-**Demo:** [nova-salud-steel.vercel.app](https://nova-salud-steel.vercel.app)
+> Proyecto académico desarrollado como trabajo final del curso Fullstack Developer Software (SENATI).
 
-> Trabajo final del curso **Fullstack Developer Software** (SENATI) · Tema: *Implementación de un software web de gestión de inventario y venta de una botica*.
+## Funcionalidades
 
----
-
-## El problema
-
-La botica "Nova Salud" está en una zona comercial con mucha demanda de medicamentos. Su crecimiento trajo problemas porque el control de stock y la atención se hacen de forma manual:
-
-- Errores en el inventario.
-- Desabastecimientos frecuentes.
-- Tiempos de espera largos para los clientes.
-
-## La solución
-
-Una aplicación web que permite:
-
-- Registrar ventas de forma rápida, con búsqueda o escaneo de código de barras.
-- Mantener el stock actualizado automáticamente con cada venta.
-- Recibir alertas de reposición cuando un producto tiene stock bajo, está agotado o está por vencer.
-- Consultar el historial de compras de cada cliente.
-- Gestionar la reposición de productos por proveedor.
-
----
-
-## Pantallas y funcionalidades
-
-| Pantalla | Qué hace |
-| --- | --- |
-| **Dashboard** | Resumen del día: ventas, productos con stock bajo, por vencer y agotados, gráfico de ventas de la semana, alertas de reposición y últimas ventas. |
-| **Ventas** | Punto de venta. Búsqueda por nombre o código, filtro por categoría, ticket con cantidades, IGV (18 %), descuento, métodos de pago (Efectivo, Tarjeta, Yape y Plin), cálculo de vuelto y emisión de boleta. Al cobrar descuenta el stock. |
-| **Inventario** | Lista de productos con búsqueda, filtros por categoría, proveedor y estado, paginación y tarjetas de resumen. Cada producto tiene un estado: *Normal*, *Stock bajo*, *Por vencer* (vence en 90 días o menos) o *Agotado*. |
-| **Clientes** | Lista de clientes con búsqueda por nombre o DNI, detalle del cliente seleccionado, últimas compras y botón **Nueva venta**, que abre Ventas con el cliente ya elegido. |
-| **Reposición** | Productos que hay que reponer con una cantidad sugerida, armado de la orden agrupada por proveedor, generación de la orden y seguimiento de pedidos (*Pendiente* / *Recibida*). Al recibir un pedido, el stock sube. |
-
-### Cómo se calculan algunas cosas
-
-- **IGV:** los precios del inventario ya incluyen el IGV (18 %). El subtotal y el IGV se calculan hacia atrás a partir del total.
-- **Cantidad sugerida de reposición:** se pide lo necesario para llegar al doble del stock mínimo (el triple si el producto está agotado), redondeado a múltiplos de 5.
-- **Estado compartido:** Ventas, Inventario y Reposición usan los mismos datos. Si vendes un producto, baja el stock en Inventario y puede aparecer en Reposición.
-
----
+- **Dashboard:** resumen de ventas, alertas de stock, productos por vencer y ventas semanales.
+- **Punto de venta:** búsqueda por nombre o código, carrito, cálculo de IGV (18 %), descuentos, métodos de pago y registro de comprobantes.
+- **Inventario:** consulta, búsqueda y filtros de productos; alertas por bajo stock, agotados y próximos a vencer.
+- **Clientes:** consulta de datos e historial de compras.
+- **Reposición:** creación de órdenes agrupadas por proveedor y recepción de pedidos con actualización de stock.
+- **Acceso protegido:** inicio de sesión y API con autenticación JWT.
 
 ## Tecnologías
 
-**Frontend**
-- [React](https://react.dev) 19 con [Vite](https://vite.dev)
-- [React Router](https://reactrouter.com) para la navegación entre pantallas
-- [Recharts](https://recharts.org) para el gráfico de ventas
-- [lucide-react](https://lucide.dev) para los íconos
-- CSS propio por componente
-- ESLint
+- React 19, Vite 8 y React Router 7
+- Node.js y Express 5
+- SQLite integrado para desarrollo y caché local
+- Supabase (PostgreSQL) como almacenamiento remoto opcional
+- JWT y bcryptjs para autenticación y contraseñas
+- Recharts, Bootstrap y Lucide React
 
-**Backend**
-- Node.js (versión 22.5 o superior) con [Express](https://expressjs.com) 5
-- Autenticación con JSON Web Tokens (`jsonwebtoken`) y contraseñas cifradas con `bcryptjs`
-- `cors` para permitir las peticiones desde el frontend
+## Requisitos
 
-**Despliegue:** [Vercel](https://vercel.com)
+- Node.js **22.5 o superior** y npm
+- Una instancia de Supabase es opcional. Sin configurar Supabase, la API usa SQLite local y crea `server/novasalud.db` automáticamente.
 
----
-
-## Cómo ejecutarlo
-
-Requisitos: **Node.js 22.5 o superior** y npm.
+## Instalación y ejecución local
 
 ```bash
-# 1. Clonar el repositorio
 git clone https://github.com/Magidark00/NovaSalud.git
 cd NovaSalud
-
-# 2. Instalar dependencias
 npm install
-
-# 3. Levantar el frontend
-npm run dev
 ```
 
-La aplicación queda disponible en `http://localhost:5173`.
-
-Para levantar el backend, en otra terminal:
+En una terminal, inicia la API:
 
 ```bash
 npm run server
 ```
 
-### Scripts disponibles
+En otra terminal, inicia la interfaz:
+
+```bash
+npm run dev
+```
+
+Abre la URL que muestra Vite, normalmente `http://localhost:5173`. La API local se ejecuta en `http://localhost:3001`; su endpoint de estado es `/api/health`.
+
+### Configuración opcional de Supabase
+
+La API detecta Supabase cuando están definidas `SUPABASE_URL` y `SUPABASE_KEY`. Puedes definirlas en el entorno antes de iniciar el servidor. `SUPABASE_KEY` puede ser una clave con permisos adecuados para las operaciones que realiza la API. No publiques claves secretas ni las incluyas en el repositorio.
+
+El esquema y los datos de ejemplo para PostgreSQL están en [`server/supabase_schema.sql`](server/supabase_schema.sql). El script elimina y vuelve a crear las tablas existentes; ejecútalo únicamente en una base de datos de desarrollo cuyos datos puedas reemplazar.
+
+## Scripts
 
 | Comando | Descripción |
 | --- | --- |
-| `npm run dev` | Servidor de desarrollo del frontend |
-| `npm run server` | Servidor del backend (API) |
-| `npm run build` | Compila el frontend para producción |
-| `npm run preview` | Vista previa de la compilación |
-| `npm run lint` | Revisa el código con ESLint |
+| `npm run dev` | Inicia el servidor de desarrollo de Vite. |
+| `npm run server` | Inicia la API Express local. |
+| `npm run build` | Genera la compilación de producción en `dist/`. |
+| `npm run preview` | Sirve localmente la compilación de producción. |
+| `npm run lint` | Ejecuta ESLint. |
 
----
+## API
 
-## Estructura del proyecto
+La API ofrece rutas para autenticación, dashboard, productos, ventas, clientes y reposición. Las rutas principales están bajo `/api`:
 
-```
-NovaSalud/
-├── public/
-├── src/
-│   ├── main.jsx                 Punto de entrada
-│   ├── App.jsx                  Rutas de la aplicación
-│   ├── index.css                Variables de color y estilos globales
-│   ├── context/                 Estado compartido (productos y reposiciones)
-│   ├── hooks/                   useVenta: carrito, totales, IGV y vuelto
-│   ├── utils/formato.js         Formato de soles, fechas, estados de producto
-│   ├── data/                    Datos de ejemplo (se reemplazan por la API)
-│   ├── pages/                   Dashboard, Ventas, Inventario, Clientes, Reposicion
-│   └── componentes/
-│       ├── layout/              Barra lateral, barra superior y estructura general
-│       ├── common/              Componentes reutilizables (etiquetas, tarjetas, tablas, paginación)
-│       ├── dashboard/
-│       ├── ventas/
-│       ├── inventario/
-│       ├── clientes/
-│       └── reposicion/
-├── index.html
-├── package.json
-└── vite.config.js
-```
+| Recurso | Rutas |
+| --- | --- |
+| Sesión | `/api/auth/login`, `/api/auth/me` |
+| Dashboard | `/api/dashboard` |
+| Productos | `/api/productos` |
+| Ventas | `/api/ventas` |
+| Clientes | `/api/clientes` |
+| Reposición | `/api/reposicion` |
+| Estado | `/api/health` |
 
-> Los nombres de carpetas y archivos **distinguen mayúsculas y minúsculas**. En Windows funciona igual, pero Vercel corre en Linux y falla si no coinciden exactamente.
-
----
+Las rutas que requieren sesión reciben el token JWT en `Authorization: Bearer <token>`.
 
 ## Modelo de datos
 
-```mermaid
-erDiagram
-    CATEGORIA ||--o{ PRODUCTO : agrupa
-    PROVEEDOR ||--o{ PRODUCTO : abastece
-    PROVEEDOR ||--o{ REPOSICION : suministra
-    PRODUCTO ||--o{ REPOSICION : recibe
-    PRODUCTO ||--o{ DETALLE_VENTA : "se vende en"
-    VENTA ||--o{ DETALLE_VENTA : contiene
-    CLIENTE ||--o{ VENTA : realiza
-    USUARIO ||--o{ VENTA : registra
+El esquema SQL completo, incluidas restricciones, relaciones y datos iniciales, se mantiene en [`server/supabase_schema.sql`](server/supabase_schema.sql). Las tablas están descritas a continuación; `PK` indica clave primaria, `FK` clave foránea y `Único` una restricción de unicidad.
 
-    CATEGORIA {
-        int idCategoria PK
-        string nombre
-    }
-    PROVEEDOR {
-        int idProveedor PK
-        string nombre
-        string ruc
-        string telefono
-    }
-    PRODUCTO {
-        int idProducto PK
-        string nombre
-        string descripcion
-        int stock
-        int stockMinimo
-        decimal precio
-        int idCategoria FK
-        int idProveedor FK
-    }
-    REPOSICION {
-        int idReposicion PK
-        date fecha
-        int cantidad
-        int idProducto FK
-        int idProveedor FK
-    }
-    VENTA {
-        int idVenta PK
-        date fecha
-        decimal montoTotal
-        int idCliente FK
-        int idUsuario FK
-    }
-    DETALLE_VENTA {
-        int idDetalle PK
-        int idVenta FK
-        int idProducto FK
-        int cantidad
-        decimal precioUnitario
-        decimal subtotal
-    }
-    CLIENTE {
-        int idCliente PK
-        string nombre
-        string dni
-        string telefono
-    }
-    USUARIO {
-        int idUsuario PK
-        string nombre
-        string usuario
-        string clave
-        string rol
-    }
+| Tabla | Columnas principales |
+| --- | --- |
+| `usuarios` | `id` (PK), `username` (Único), `nombre`, `rol`, `iniciales`, `password_hash`, `activo`, `creado_en` |
+| `productos` | `id` (PK), `codigo` (Único), `nombre`, `presentacion`, `categoria`, `proveedor`, `precio`, `stock`, `stock_minimo`, `vence`, `activo`, `actualizado_en` |
+| `clientes` | `id` (PK), `dni` (Único), `nombre`, `telefono` (opcional), `email` (opcional), `direccion` (opcional), `compras`, `ultima_compra` (opcional), `total_gastado`, `ultimas_compras_json`, `creado_en` |
+| `ventas` | `id` (PK), `numero_boleta` (Único), `codigo_boleta` (Único), `tipo_comprobante`, `documento_cliente`, `cliente_id` (FK opcional), `cliente_nombre`, `usuario_id` (FK opcional), `metodo_pago`, `subtotal`, `igv`, `descuento`, `total`, `recibido` (opcional), `vuelto` (opcional), `fecha` |
+| `detalle_ventas` | `id` (PK), `venta_id` (FK), `producto_id` (FK opcional), `producto_nombre`, `cantidad`, `precio_unitario`, `importe` |
+| `ventas_semanales_resumen` | `id` (PK), `dia` (Único), `orden`, `ventas` |
+| `ordenes_reposicion` | `id` (PK), `codigo` (Único), `proveedor`, `fecha`, `estado`, `usuario_id` (FK opcional), `observaciones` (opcional) |
+| `detalle_reposicion` | `id` (PK), `orden_id` (FK), `producto_id` (FK opcional), `producto_nombre`, `cantidad` |
+
+Relaciones principales: un cliente y un usuario pueden asociarse a muchas ventas; cada venta contiene líneas en `detalle_ventas`. Las líneas pueden apuntar a productos. Una orden de reposición agrupa sus líneas en `detalle_reposicion`, que pueden referenciar productos. Las referencias opcionales conservan el registro aunque se elimine el cliente, usuario o producto asociado.
+
+## Estructura
+
+```text
+NovaSalud/
+├── api/                 Adaptador de API para despliegue serverless
+├── public/              Recursos estáticos
+├── server/
+│   ├── middleware/      Seguridad y autenticación
+│   ├── routes/          Rutas de la API
+│   ├── app.js            Configuración de Express
+│   ├── db.js             SQLite y datos iniciales
+│   └── supabase_schema.sql
+└── src/
+    ├── componentes/      Componentes de interfaz por módulo
+    ├── context/          Estado compartido y sesión
+    ├── pages/            Pantallas de la aplicación
+    ├── services/         Comunicación con la API
+    └── utils/            Formato y exportación
 ```
 
-### Campos que las pantallas ya usan y el modelo aún no tiene
+## Despliegue
 
-| Tabla | Campo | Para qué sirve |
-| --- | --- | --- |
-| `Producto` | `fechaVencimiento` | Estado "Por vencer" y columna "Vence" |
-| `Producto` | `presentacion` | Texto como "Caja x 100" |
-| `Producto` | `codigoBarras` | Escaneo en Ventas |
-| `Venta` | `metodoPago` | Efectivo, Tarjeta, Yape o Plin |
-| `Venta` | `numeroBoleta`, `igv` | Boleta (B001-000461) y desglose del IGV |
-| `Reposicion` | `estado` | Pendiente o Recibida |
-
----
-
-## Estado del proyecto
-
-- [x] Diseño de las 5 pantallas en Figma
-- [x] Dashboard
-- [x] Ventas
-- [x] Inventario
-- [x] Clientes
-- [x] Reposición
-- [x] Estado compartido entre pantallas (datos de ejemplo)
-- [ ] Conectar el frontend con la API y la base de datos
-- [ ] Inicio de sesión y permisos por rol (Administrador / Vendedor)
-- [ ] Formularios de nuevo y edición de productos y clientes
-- [ ] Exportar listas a CSV / Excel
-- [ ] Historial de ventas y de reposiciones
-- [ ] Nueva reposición manual
-- [ ] Datos del Dashboard calculados desde la base de datos
-
----
-
-## Seguridad y buenas prácticas previstas
-
-- Contraseñas cifradas (`bcryptjs`) y sesiones con JWT.
-- El backend debe **recalcular el total y el IGV** al registrar una venta, sin confiar en lo que envía el navegador.
-- El número de boleta lo asigna el backend, para evitar duplicados.
-- El descuento de stock y la recepción de pedidos se hacen en el backend.
-
----
+El repositorio incluye configuración para Vercel (`vercel.json`). Configura las variables de entorno necesarias para el backend en el proyecto de despliegue. Para persistir los datos entre ejecuciones, configura Supabase; el archivo SQLite local o temporal no es almacenamiento persistente en un entorno serverless.
 
 ## Equipo
 
 - Matias Melendez Asencio
-<!-- Agrega aquí a tus compañeros -->
-
----
 
 ## Licencia
 
-Proyecto académico desarrollado con fines educativos.
+Proyecto académico con fines educativos.

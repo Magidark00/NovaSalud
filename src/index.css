@@ -67,6 +67,41 @@ a {
   text-decoration: none;
 }
 
+img,
+svg,
+video,
+canvas {
+  max-width: 100%;
+}
+
+@media (max-width: 600px) {
+  html,
+  body,
+  #root {
+    min-height: 100%;
+    height: auto;
+  }
+
+  body {
+    overflow-x: hidden;
+  }
+
+  .card {
+    min-width: 0;
+  }
+
+  .tabla-scroll,
+  .data-table__scroll {
+    max-width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .data-table {
+    min-width: 640px;
+  }
+}
+
 :focus-visible {
   outline: 2px solid var(--teal-600);
   outline-offset: 2px;

@@ -24,3 +24,22 @@
     padding: 20px 16px 32px;
   }
 }
+
+@media (max-width: 600px) {
+  .layout {
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+  }
+
+  .layout__main {
+    flex: 1;
+    width: 100%;
+    min-height: 0;
+  }
+
+  .layout__content {
+    width: 100%;
+    padding: 18px 14px calc(90px + env(safe-area-inset-bottom));
+  }
+}

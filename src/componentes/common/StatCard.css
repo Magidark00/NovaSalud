@@ -69,3 +69,28 @@
 .stat-card__row .stat-card__note {
   margin-top: 0;
 }
+
+@media (max-width: 480px) {
+  .stat-card {
+    gap: 9px;
+    padding: 13px 11px;
+  }
+
+  .stat-card__icon {
+    width: 34px;
+    height: 34px;
+  }
+
+  .stat-card__label {
+    font-size: 11px;
+  }
+
+  .stat-card__value {
+    font-size: 21px;
+    overflow-wrap: anywhere;
+  }
+
+  .stat-card__note {
+    font-size: 10px;
+  }
+}
